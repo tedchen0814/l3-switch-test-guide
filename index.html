@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>L3 Switch 滿載測試指南</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: test-lab instrument panel — charcoal readouts, amber signal accent, one reading column with full-width tool panels */
+:root{
+  --bg:#F3F4F2; --surface:#FFFFFF; --sunken:#EBEDEA; --panel:#2B3339; --panel-2:#3A464E;
+  --fg:#1E262B; --muted:#5A666D; --line:#D6DAD7;
+  --accent:#E8A300; --accent-ink:#8A5D00; --on-panel:#EEF1EF; --on-panel-muted:#AAB5BB;
+  --ok:#23794B; --warn:#B4362A; --cold:#2F6FA8;
+  --f-display:"Barlow Condensed","Noto Sans TC",system-ui,sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161B1E; --surface:#1F262A; --sunken:#192024; --panel:#0E1315; --panel-2:#26313A;
+  --fg:#E7EBE8; --muted:#9BA7AD; --line:#323C42;
+  --accent:#F2B21B; --accent-ink:#F2B21B; --on-panel:#EEF1EF; --on-panel-muted:#95A2A8;
+  --ok:#4CC38A; --warn:#FF7A6B; --cold:#6FB0EE; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#161B1E; --surface:#1F262A; --sunken:#192024; --panel:#0E1315; --panel-2:#26313A;
+  --fg:#E7EBE8; --muted:#9BA7AD; --line:#323C42;
+  --accent:#F2B21B; --accent-ink:#F2B21B; --on-panel:#EEF1EF; --on-panel-muted:#95A2A8;
+  --ok:#4CC38A; --warn:#FF7A6B; --cold:#6FB0EE; color-scheme:dark }
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.75;margin:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px}
+main.wrap{padding-block:0 80px}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.3;margin:0}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink)}
+.mono{font-family:var(--f-mono)}
+.num{font-variant-numeric:tabular-nums}
+a{color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* hero */
+.hero{background:var(--panel);color:var(--on-panel);padding-block:56px 40px}
+.hero .eyebrow{color:var(--accent)}
+.hero h1{font-size:clamp(30px,5vw,50px);font-weight:900;margin-top:10px}
+.hero p{color:var(--on-panel-muted);max-width:62ch;margin-top:14px}
+.readouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--panel-2);border:1px solid var(--panel-2);margin-top:32px;border-radius:6px;overflow:hidden}
+.readout{background:var(--panel);padding:16px 18px;min-width:0}
+.readout b{display:block;font-family:var(--f-display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1.05;color:var(--accent);font-variant-numeric:tabular-nums}
+.readout span{font-size:13px;color:var(--on-panel-muted)}
+.audience{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.audience span{font-size:13px;border:1px solid var(--panel-2);color:var(--on-panel-muted);padding:2px 10px;border-radius:999px}
+
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:10px;scrollbar-width:none}
+nav.toc .wrap::-webkit-scrollbar{display:none}
+nav.toc a{flex:none;font-size:14px;color:var(--muted);text-decoration:none;padding:4px 12px;border-radius:999px;border:1px solid transparent}
+nav.toc a:hover{color:var(--fg);border-color:var(--line)}
+nav.toc a.on{color:var(--fg);border-color:var(--accent);background:var(--surface)}
+
+section{padding-top:64px}
+section > h2{font-size:clamp(24px,3.4vw,32px);font-weight:900;margin-top:6px}
+h3.sub{font-size:20px;font-weight:700;margin-top:36px}
+.lead{color:var(--muted);max-width:68ch;margin-top:10px}
+.prose{max-width:68ch}
+.prose p + p{margin-top:12px}
+.added{display:inline-block;font-size:12px;font-family:var(--f-mono);color:var(--accent-ink);border:1px solid var(--accent);border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:2px;letter-spacing:.04em}
+
+.grid{display:grid;gap:16px;margin-top:24px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;min-width:0}
+.card h4{font-size:17px;font-weight:700}
+.card p{color:var(--muted);font-size:15px;margin-top:6px}
+.big{font-family:var(--f-display);font-weight:700;font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums}
+.big small{font-size:18px;margin-left:4px}
+.big.accent{color:var(--accent-ink)}
+.label{font-size:13px;color:var(--muted)}
+
+/* question */
+.question{background:var(--panel);color:var(--on-panel);border-radius:8px;padding:28px;margin-top:24px}
+.question .q{font-size:clamp(22px,3.2vw,30px);font-weight:900;line-height:1.4}
+.question p{color:var(--on-panel-muted);margin-top:10px}
+.question button{margin-top:16px}
+.answer{margin-top:14px;border-top:1px dashed var(--panel-2);padding-top:14px}
+.answer b{color:var(--accent)}
+
+.btn{appearance:none;font:600 14px var(--f-body);padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1A1A}
+.btn.ghost-dark{background:transparent;border-color:var(--panel-2);color:var(--on-panel)}
+
+/* myth flip */
+.flip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:20px;text-align:left;font:inherit;cursor:pointer;min-height:200px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,background .2s}
+.flip:hover{border-color:var(--muted)}
+.flip .tag{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.flip .say{font-size:19px;font-weight:700;line-height:1.45}
+.flip .hint{margin-top:auto;font-size:13px;color:var(--muted)}
+.flip .truth{display:none}
+.flip[aria-pressed="true"]{border-color:var(--accent);background:var(--panel);color:var(--on-panel)}
+.flip[aria-pressed="true"] .myth,.flip[aria-pressed="true"] .hint{display:none}
+.flip[aria-pressed="true"] .truth{display:flex;flex-direction:column;gap:8px}
+.flip[aria-pressed="true"] .tag{color:var(--accent)}
+.truth .formula{font-family:var(--f-mono);font-size:15px;color:var(--accent)}
+.truth p{color:var(--on-panel-muted);font-size:15px}
+
+/* term tooltip */
+.term{text-decoration:underline dotted var(--accent-ink);text-underline-offset:4px;cursor:help;position:relative;white-space:nowrap}
+.term .tip{display:none;position:absolute;left:0;top:calc(100% + 6px);width:max-content;max-width:min(280px,80vw);white-space:normal;background:var(--panel);color:var(--on-panel);font-size:13px;line-height:1.55;padding:8px 10px;border-radius:6px;z-index:30;font-weight:400;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.term:hover .tip,.term:focus .tip,.term.open .tip{display:block}
+
+/* worst-case */
+.worst .card{display:flex;gap:16px;align-items:flex-start}
+.chip-icon{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--panel);color:var(--accent);font-family:var(--f-mono);font-weight:600;font-size:13px}
+.banner{margin-top:16px;background:var(--panel);color:var(--on-panel);border-radius:8px;padding:16px 20px}
+.banner b{color:var(--accent)}
+
+/* tool panel */
+.tool{margin-top:24px;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}
+.tool-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)}
+.tool-head h4{font-size:18px;font-weight:700}
+.tool-head .eyebrow{color:var(--muted)}
+.tool-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.controls{padding:20px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{appearance:none;font:600 14px var(--f-mono);padding:6px 10px;border-radius:4px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.presets button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#1A1A1A}
+.field label{font-size:14px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.field output{font-family:var(--f-mono);color:var(--fg);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number]{width:100%;font:600 16px var(--f-mono);padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.note{font-size:13px;color:var(--muted)}
+.formula-line{font-family:var(--f-mono);font-size:13px;color:var(--muted);background:var(--bg);padding:10px 12px;border-radius:4px;overflow-x:auto;white-space:nowrap}
+.screen{background:var(--panel);color:var(--on-panel);padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px dashed var(--panel-2);padding-bottom:9px}
+.row span{font-size:14px;color:var(--on-panel-muted)}
+.row b{font-family:var(--f-mono);font-size:17px;font-variant-numeric:tabular-nums;text-align:right}
+.row b.hot{color:var(--accent)}
+.total span{display:block;font-size:13px;color:var(--on-panel-muted)}
+.total b{font-family:var(--f-display);font-size:40px;color:var(--accent);line-height:1.05;font-variant-numeric:tabular-nums}
+.meter{height:10px;background:var(--panel-2);border-radius:5px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);width:100%;transition:width .25s}
+.verdict{font-size:14px;color:var(--on-panel-muted)}
+.verdict strong{color:var(--accent)}
+.stackbar{display:flex;height:34px;border-radius:4px;overflow:hidden;font-size:12px;font-family:var(--f-mono)}
+.stackbar div{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;min-width:0;transition:flex-grow .25s}
+.stackbar .poe{background:var(--panel-2);color:var(--on-panel)}
+.stackbar .loss{background:var(--accent);color:#1A1A1A}
+.vtable{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:14px}
+.vtable th,.vtable td{padding:6px 4px;text-align:right;border-bottom:1px dashed var(--panel-2);font-variant-numeric:tabular-nums}
+.vtable th:first-child,.vtable td:first-child{text-align:left}
+.vtable th{color:var(--on-panel-muted);font-weight:400;font-family:var(--f-body);font-size:13px}
+.vtable td.warn{color:var(--accent)}
+
+/* steps */
+.steps{list-style:none;padding:0;margin:24px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:s}
+.steps li{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;counter-increment:s;min-width:0}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--panel);color:var(--on-panel);font:700 16px var(--f-mono);margin-bottom:10px}
+.steps li:last-child::before{background:var(--accent);color:#1A1A1A}
+.steps h4{font-size:17px}
+.steps .sym{font-family:var(--f-mono);font-size:15px;color:var(--accent-ink);margin-top:2px}
+.steps p{color:var(--muted);font-size:15px;margin-top:6px}
+
+/* architecture */
+.arch{display:grid;grid-template-columns:minmax(0,1fr) 70px minmax(0,1.2fr) 70px minmax(0,1fr);grid-template-rows:auto auto auto;gap:12px 0;align-items:center;margin-top:24px}
+.node{appearance:none;font:inherit;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;color:var(--fg);min-width:0}
+.node:hover{border-color:var(--muted)}
+.node[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.node b{display:block;font-size:15px}
+.node span{display:block;font-size:12.5px;color:var(--muted)}
+.node.dut{background:var(--panel);color:var(--on-panel);border-color:var(--panel);padding:22px 18px;text-align:center}
+.node.dut span{color:var(--on-panel-muted)}
+.conn{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);text-align:center;line-height:1.4;position:relative;padding-block:8px}
+.conn::before{content:"";position:absolute;left:4px;right:4px;top:50%;border-top:2px solid var(--muted)}
+.conn span{position:relative;background:var(--bg);padding:0 4px}
+.conn.poe::before{border-color:var(--accent)}
+.conn.poe{color:var(--accent-ink)}
+.vconn{grid-column:3;text-align:center;font-family:var(--f-mono);font-size:11.5px;color:var(--muted);border-left:2px dashed var(--muted);margin-left:50%;padding:6px 0 6px 8px;text-align:left}
+.detail{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px}
+.detail h4{font-size:18px}
+.detail .models{font-family:var(--f-mono);font-size:14px;color:var(--accent-ink);margin-top:6px;white-space:pre-line}
+.detail ul{margin:10px 0 0;padding-left:20px;color:var(--muted)}
+.callout{margin-top:16px;border:1px solid var(--accent);background:var(--sunken);border-radius:8px;padding:14px 18px;font-size:15px}
+.callout b{color:var(--accent-ink)}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chips span{font-family:var(--f-mono);font-size:14px;font-weight:600;padding:6px 12px;border-radius:4px;background:var(--sunken);border:1px solid var(--line)}
+.chips span.hl{background:var(--accent);border-color:var(--accent);color:#1A1A1A}
+
+/* matrix */
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.checks label{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:13.5px;padding:5px 10px;border:1px solid var(--line);border-radius:4px;background:var(--bg);cursor:pointer;color:var(--fg)}
+.checks input{accent-color:var(--accent);margin:0}
+.fieldset-title{font-size:14px;color:var(--muted);margin-bottom:6px}
+.gantt{margin-top:6px;display:flex;flex-direction:column;gap:8px}
+.gantt .bar-row{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;align-items:center;font-size:13px}
+.gantt .track{position:relative;height:22px;background:var(--panel-2);border-radius:3px}
+.gantt .seg{position:absolute;top:0;bottom:0;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-family:var(--f-mono);font-size:11px;color:#1A1A1A;white-space:nowrap;overflow:hidden}
+.seg.setup{background:#8C9AA2}
+.seg.test{background:var(--accent)}
+.seg.burn{background:#D98C00}
+.seg.cold{background:#6FB0EE}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--on-panel-muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+/* tables */
+.table-wrap{overflow-x:auto;margin-top:20px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table.data{border-collapse:collapse;width:100%;min-width:640px;font-size:14.5px}
+table.data th,table.data td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+table.data th{background:var(--sunken);font-weight:700;font-size:13.5px;color:var(--muted)}
+table.data tr:last-child td{border-bottom:0}
+table.data td.v{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
+table.data tr.example td{color:var(--muted);font-style:italic}
+.pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.spec{border-color:var(--ok);color:var(--ok)}
+.pill.sugg{border-color:var(--accent);color:var(--accent-ink)}
+.pill.tbd{border-color:var(--warn);color:var(--warn)}
+.copybar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.copybar .note{min-height:1em}
+
+/* checklist */
+.tabs{display:flex;gap:6px;margin-top:24px;border-bottom:1px solid var(--line)}
+.tabs button{appearance:none;font:700 15px var(--f-body);padding:10px 16px;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.checklist{list-style:none;padding:0;margin:0}
+.checklist li{border-bottom:1px solid var(--line)}
+.checklist label{display:flex;gap:12px;align-items:flex-start;padding:14px 4px;cursor:pointer}
+.checklist input{width:20px;height:20px;accent-color:var(--accent);margin-top:3px;flex:none}
+.checklist input:checked + span{color:var(--muted);text-decoration:line-through}
+.progress{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.progress .meter{flex:1;min-width:160px;background:var(--sunken)}
+
+/* faq */
+details{border-bottom:1px solid var(--line);padding:4px 0}
+details summary{cursor:pointer;font-weight:700;padding:12px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";font-family:var(--f-mono);color:var(--accent-ink)}
+details[open] summary::after{content:"−"}
+details .body{color:var(--muted);padding:0 0 14px;max-width:70ch}
+details .body p + p{margin-top:8px}
+
+.glossary{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:20px}
+.glossary div{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;min-width:0}
+.glossary b{font-family:var(--f-mono);font-size:14px}
+.glossary p{font-size:14px;color:var(--muted);margin-top:2px}
+
+footer{border-top:1px solid var(--line);margin-top:64px;padding-block:24px;font-size:13px;color:var(--muted)}
+
+@media (max-width:820px){
+  .tool-body,.g2,.g3,.g4,.steps{grid-template-columns:minmax(0,1fr)}
+  .readouts{grid-template-columns:minmax(0,1fr)}
+  .arch{grid-template-columns:minmax(0,1fr)}
+  .arch > *{grid-column:1 !important;grid-row:auto !important}
+  .conn{padding-block:2px}
+  .conn::before{left:50%;right:auto;top:0;bottom:0;border-top:0;border-left:2px solid var(--muted)}
+  .conn.poe::before{border-color:var(--accent)}
+  .vconn{margin-left:50%}
+}
+@media (min-width:821px) and (max-width:1000px){ .g4{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Test Guide · 內部分享</div>
+    <h1>工規 L3 PoE+ Switch Hub<br>滿載測試指南</h1>
+    <p>最大功耗與壓力測試要怎麼組出最壞工況、量什麼、怎樣才算通過。附線速、功耗與時程計算器，可以直接拿來規劃測試。</p>
+    <div class="readouts">
+      <div class="readout"><b>240 W</b><span>PoE 總預算 · 8 埠 × 30 W</span></div>
+      <div class="readout"><b>41.666 Mpps</b><span>轉發能力 · 64B 線速</span></div>
+      <div class="readout"><b>−40 ~ 75 °C</b><span>工作溫度</span></div>
+    </div>
+    <div class="audience"><span>RD 工程師</span><span>新進工程師</span><span>PM</span></div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="章節">
+  <div class="wrap" id="toc">
+    <a href="#why">為什麼要測</a><a href="#dut">認識待測物</a><a href="#worst">最壞工況</a><a href="#setup">測試架構</a><a href="#power">功耗測試</a><a href="#stress">壓力測試</a><a href="#plan">矩陣與時程</a><a href="#criteria">通過標準</a><a href="#check">檢查清單</a><a href="#appx">附錄</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- 01 -->
+<section id="why">
+  <div class="eyebrow">01 · 為什麼要測</div>
+  <h2>先想一個數字</h2>
+  <div class="question">
+    <div class="q">規格寫 PoE 240W，這台交換器最多吃多少電？</div>
+    <p>給自己 10 秒，心裡想一個數字，再按下面的按鈕。</p>
+    <button class="btn ghost-dark" id="revealBtn" aria-expanded="false" aria-controls="answer">看答案</button>
+    <div class="answer" id="answer" hidden>答案是<b>一定超過 240W</b>。240W 只算到送給受電設備的電，交換機自己的晶片、PHY 和電源轉換也要吃電。下面三張卡片是最常見的三個誤解。</div>
+  </div>
+
+  <h3 class="sub">三個常見誤解</h3>
+  <p class="lead">點一下卡片，看正確理解。</p>
+  <div class="grid g3">
+    <button class="flip" aria-pressed="false">
+      <span class="tag">迷思 ①</span>
+      <span class="myth say">「PoE 預算 240W，整機最大就是 240W 左右。」</span>
+      <span class="truth"><span class="say">240W 只是送給 PD 的電</span><span class="formula">P_in = P_PoE + P_loss</span><p>交換機自身損耗 P_loss 會變成熱，決定散熱設計，必須在輸入端實測。</p></span>
+      <span class="hint">點擊翻面 ↺</span>
+    </button>
+    <button class="flip" aria-pressed="false">
+      <span class="tag">迷思 ②</span>
+      <span class="myth say">「用大封包把頻寬打滿，就是滿載。」</span>
+      <span class="truth"><span class="say">64B 最操晶片，但不一定最耗電</span><span class="formula">64B 1.488 Mpps · 1518B 81.3 kpps</span><p>查表次數差約 18 倍。最大功耗要測 64B、1518B、IMIX 三種取最大值。</p></span>
+      <span class="hint">點擊翻面 ↺</span>
+    </button>
+    <button class="flip" aria-pressed="false">
+      <span class="tag">迷思 ③</span>
+      <span class="myth say">「54V、常溫測過，就沒問題了。」</span>
+      <span class="truth"><span class="say">44V＋極端溫度才是最壞</span><span class="formula">−40 °C / 75 °C × 72 h</span><p>最低電壓時電流最大、最熱；要在溫箱內帶滿載各跑 72 小時。</p></span>
+      <span class="hint">點擊翻面 ↺</span>
+    </button>
+  </div>
+</section>
+
+<!-- 02 -->
+<section id="dut">
+  <div class="eyebrow">02 · 認識待測物</div>
+  <h2>待測物：工規 L3 PoE+ Switch Hub</h2>
+  <div class="grid g4">
+    <div class="card"><div class="big">8<small>×</small></div><div class="label">1G RJ45 PoE+ 埠</div></div>
+    <div class="card"><div class="big">2<small>×</small></div><div class="label">1G/10G SFP+ 埠</div></div>
+    <div class="card"><div class="big accent">240<small>W</small></div><div class="label">PoE 總功率預算</div></div>
+    <div class="card"><div class="big accent">−40~75<small>°C</small></div><div class="label">工作溫度</div></div>
+  </div>
+  <div class="table-wrap">
+    <table class="data">
+      <tbody>
+        <tr><th scope="row">供電</th><td>DC 44～57V（典型 54V），雙重輸入</td></tr>
+        <tr><th scope="row">PoE</th><td>IEEE 802.3af / 802.3at（<span class="term" tabindex="0">PoE+<span class="tip" role="tooltip">802.3at，又稱 PoE+。Type 2 / Class 4，PSE 每埠最大輸出 30W。</span></span>）</td></tr>
+        <tr><th scope="row">L3 協定</th><td>IPv4 / IPv6 靜態路由、RIP、OSPFv2 / v3</td></tr>
+        <tr><th scope="row">交換容量</th><td class="v">56 Gbps</td></tr>
+        <tr><th scope="row">轉發能力</th><td class="v">41.666 Mpps</td></tr>
+        <tr><th scope="row">Jumbo Frame</th><td class="v">10240 Bytes</td></tr>
+        <tr><th scope="row">QoS</th><td>8 個硬體佇列，WRR / Strict Priority</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">PoE 功率的兩端 <span class="added">補充</span></h3>
+  <div class="grid g2">
+    <div class="card"><div class="label">PSE 端（交換器輸出）</div><div class="big">30<small>W / 埠</small></div><p>802.3at Class 4 的上限，也是 240W 預算的計算基準：8 × 30W。</p></div>
+    <div class="card"><div class="label">PD 端（受電設備收到）</div><div class="big accent">25.5<small>W / 埠</small></div><p>中間的 4.5W 是 100m 網路線的損耗上限。負載儀接短線時，抽 30W 幾乎全落在 PSE 端。</p></div>
+  </div>
+  <div class="callout"><b>設定負載儀時要先確認：</b>「每埠 30W」是在 PSE 端量的，還是 PD 端量的。兩者混用，240W 會算錯。</div>
+</section>
+
+<!-- 03 -->
+<section id="worst">
+  <div class="eyebrow">03 · 核心方法</div>
+  <h2>最壞工況四要素</h2>
+  <p class="lead">四個條件要「同時」成立。分開測每一項都過，不代表疊加後也會過。</p>
+  <div class="grid g2 worst">
+    <div class="card"><div class="chip-icon">NET</div><div><div class="label">流量</div><h4>100% 線速 L3</h4><p>64B / 1518B / IMIX，所有流量跨子網，經過路由查表。</p></div></div>
+    <div class="card"><div class="chip-icon">PoE</div><div><div class="label">PoE</div><h4>8 × 30W = 240W</h4><p>Port 1～8 模擬 802.3at Type 2（Class 4）受電設備。</p></div></div>
+    <div class="card"><div class="chip-icon">V</div><div><div class="label">電壓</div><h4>44V（最低輸入）</h4><p>同樣功率下電流最大，內部 DC-DC 最熱。</p></div></div>
+    <div class="card"><div class="chip-icon">°C</div><div><div class="label">溫度</div><h4>−40 °C / 75 °C</h4><p>高低溫各帶滿載 72 小時 Burn-in。</p></div></div>
+  </div>
+  <div class="banner"><b>同時疊加：</b>流量滿、PoE 滿、電壓最低、溫度最極端，才是要證明的最壞情況。</div>
+</section>
+
+<!-- 04 -->
+<section id="setup">
+  <div class="eyebrow">04 · 測試架構</div>
+  <h2>儀器怎麼接</h2>
+  <p class="lead">點選任一台儀器，下方會顯示用途、建議型號與關鍵規格。</p>
+  <div class="arch" id="arch">
+    <button class="node" data-k="psu" style="grid-column:1;grid-row:1"><b>直流電源供應器</b><span>可調 44 / 54 / 57V</span></button>
+    <button class="node" data-k="meter" style="grid-column:1;grid-row:2"><b>功率分析儀</b><span>量輸入 V / I / P</span></button>
+    <div class="conn" style="grid-column:2;grid-row:2"><span>DC 輸入</span></div>
+    <button class="node dut" data-k="dut" style="grid-column:3;grid-row:1 / span 2"><b>L3 PoE+ Switch Hub</b><span>待測物<br>8× RJ45 PoE+ ｜ 2× SFP+</span></button>
+    <div class="conn poe" style="grid-column:4;grid-row:1"><span>Port 1~8</span></div>
+    <div class="conn" style="grid-column:4;grid-row:2"><span>全部 10 埠</span></div>
+    <button class="node" data-k="poe" style="grid-column:5;grid-row:1"><b>PoE 負載模擬器</b><span>8 埠 × 30W</span></button>
+    <button class="node" data-k="tg" style="grid-column:5;grid-row:2"><b>封包產生器／分析儀</b><span>8×1G + 2×10G</span></button>
+    <div class="vconn" style="grid-row:3">熱電偶</div>
+    <button class="node" data-k="temp" style="grid-column:3;grid-row:4"><b>溫度記錄器／熱像儀</b><span>監控溫升與熱平衡點</span></button>
+  </div>
+  <div class="detail" id="detail" aria-live="polite"></div>
+  <div class="callout"><b>接線注意：</b>同一個 RJ45 要同時承載 PoE 與資料流量。PoE 負載儀需支援資料直通（pass-through），或串接 PoE Splitter，封包儀才收得到流量。</div>
+</section>
+
+<!-- 05 -->
+<section id="power">
+  <div class="eyebrow">05 · 最大功耗測試</div>
+  <h2>功耗三步量測</h2>
+  <p class="lead">目的：驗證最嚴苛工況下的最大瓦數與電源轉換效率。每一步都在 54V（典型）與 44V（最低）各量一次。</p>
+  <ol class="steps">
+    <li><h4>靜態開機功耗</h4><div class="sym">P_idle</div><p>設備開機、未插任何網線。</p></li>
+    <li><h4>網路滿載功耗</h4><div class="sym">P_system_max</div><p>10 埠滿載打流，不開 PoE。64B、1518B、IMIX 各量一次取最大。</p></li>
+    <li><h4>極限最大功耗</h4><div class="sym">P_total_in</div><p>滿載打流＋240W PoE 同時進行，記錄輸入端總功率。</p></li>
+  </ol>
+
+  <div class="tool">
+    <div class="tool-head"><h4>功耗與電流計算器 <span class="added">補充</span></h4><span class="eyebrow">P_loss = P_total_in − P_PoE_load</span></div>
+    <div class="tool-body">
+      <div class="controls">
+        <div class="field">
+          <label for="ptot">實測輸入總功率 P_total_in（W）<output id="ptotOut">300</output></label>
+          <input type="number" id="ptot" min="0" max="1000" step="1" value="300">
+          <p class="note">預設 300W 僅為示意，請填入實測值。</p>
+        </div>
+        <div class="field">
+          <label for="poeW">每埠 PoE 負載（W，PSE 端）<output id="poeWOut">30.0</output></label>
+          <input type="range" id="poeW" min="0" max="30" step="0.5" value="30">
+        </div>
+        <div class="field">
+          <label for="poeN">帶載埠數<output id="poeNOut">8</output></label>
+          <input type="range" id="poeN" min="0" max="8" step="1" value="8">
+        </div>
+        <div class="field">
+          <label for="psuA">電源供應器額定電流（A）<output id="psuAOut">10</output></label>
+          <input type="range" id="psuA" min="5" max="20" step="1" value="10">
+          <p class="note">測試規劃建議至少 60V / 10A / 600W。</p>
+        </div>
+      </div>
+      <div class="screen" aria-live="polite">
+        <div class="total"><span>交換機自身損耗 P_loss</span><b id="ploss">60.0 W</b></div>
+        <div class="stackbar" aria-hidden="true"><div class="poe" id="barPoe" style="flex-grow:240">PoE 240W</div><div class="loss" id="barLoss" style="flex-grow:60">P_loss</div></div>
+        <div class="row"><span>PoE 負載合計</span><b id="ppoe">240.0 W</b></div>
+        <div class="row"><span>P_loss 占輸入比例</span><b id="plossPct">20.0 %</b></div>
+        <table class="vtable">
+          <thead><tr><th>輸入電壓</th><th>輸入電流</th><th>電源餘裕</th></tr></thead>
+          <tbody id="vrows"></tbody>
+        </table>
+        <div class="verdict" id="pverdict"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:10px">電流 I = P_total_in ÷ V。同樣的功率，電壓越低電流越大：44V 時電流最大，端子台、保險絲、線徑與電源都要以此為準。</p>
+</section>
+
+<!-- 06 -->
+<section id="stress">
+  <div class="eyebrow">06 · 壓力測試</div>
+  <h2>L3 線速零掉包</h2>
+  <p class="lead">10 個埠各放一個 VLAN / IP 子網，啟用靜態路由或 OSPF，讓所有跨埠流量都經過路由查表（<span class="term" tabindex="0">TCAM / FIB<span class="tip" role="tooltip">TCAM：交換晶片內做高速查表的記憶體。FIB：轉發表，路由決策的結果存在這裡。</span></span>）。依 RFC 2544 / 2889 測試，細節見附錄。</p>
+  <div class="chips"><span>64</span><span>128</span><span>256</span><span>512</span><span>1024</span><span>1518</span><span class="hl">10240 Jumbo</span></div>
+
+  <div class="tool">
+    <div class="tool-head"><h4>線速計算器</h4><span class="eyebrow">8 × 1G + 2 × 10G</span></div>
+    <div class="tool-body">
+      <div class="controls">
+        <div class="presets" role="group" aria-label="封包大小預設" id="lrPresets">
+          <button data-f="64" aria-pressed="true">64</button><button data-f="128">128</button><button data-f="256">256</button><button data-f="512">512</button><button data-f="1024">1024</button><button data-f="1518">1518</button><button data-f="imix">IMIX</button><button data-f="10240">10240</button>
+        </div>
+        <div class="field">
+          <label for="fsize">封包大小（Bytes）<output id="fout">64</output></label>
+          <input type="range" id="fsize" min="64" max="10240" step="1" value="64">
+        </div>
+        <div class="formula-line"><span class="term" tabindex="0">pps<span class="tip" role="tooltip">每秒封包數。轉發引擎每個封包都要查一次路由表，pps 越高晶片越忙。</span></span> = 速率 ÷ ((Frame + 20B) × 8)</div>
+        <p class="note">20B = Preamble 7 + SFD 1 + <span class="term" tabindex="0">IFG<span class="tip" role="tooltip">Inter-Frame Gap，封包之間必須保留的 12 Bytes 空檔。</span></span> 12，是每個封包在線路上固定多佔的長度。</p>
+        <p class="note" id="imixnote" hidden>Simple IMIX：64B : 594B : 1518B = 7 : 4 : 1（依個數），平均 Frame ≈ 362B。</p>
+      </div>
+      <div class="screen" aria-live="polite">
+        <div class="row"><span>1G 埠</span><b id="p1">1.488 Mpps</b></div>
+        <div class="row"><span>10G 埠</span><b id="p10">14.881 Mpps</b></div>
+        <div class="row"><span>和 1518B 相比的查表次數</span><b id="ratio" class="hot">18.3 ×</b></div>
+        <div class="total"><span>全機合計</span><b id="pall">41.667 Mpps</b></div>
+        <div class="meter" aria-hidden="true"><i id="lrBar"></i></div>
+        <div class="verdict" id="lrVerdict"></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout"><b>最操晶片 ≠ 最耗電：</b>大封包讓緩衝記憶體與資料路徑搬更多資料，各家晶片表現不同。最大功耗要測 64B、1518B、IMIX 三種，payload 用 <span class="term" tabindex="0">PRBS<span class="tip" role="tooltip">偽隨機位元序列。隨機資料的位元翻轉比全 0 多，更接近最壞功耗。</span></span> 隨機資料，取最大值。</div>
+
+  <h3 class="sub">協定與突發壓測</h3>
+  <div class="grid g2">
+    <div class="card"><div class="label">Route Churn & Table Stress</div><h4>路由表項壓測</h4><p>儀器模擬大量 OSPF 鄰居，送出數千筆動態路由並持續變動。</p><p><b>驗證：</b>路由表收斂能力、記憶體洩漏（Memory Leak）。</p></div>
+    <div class="card"><div class="label">Micro-burst / Incast</div><h4>微突發流量壓測</h4><p>多個 1G 埠同時突發打向單一 1G 埠（多對一）。</p><p><b>驗證：</b>佇列調度 <span class="term" tabindex="0">WRR<span class="tip" role="tooltip">Weighted Round Robin，依權重輪流服務各佇列。Strict Priority 則永遠先送高優先佇列。</span></span> / Strict Priority，8 個硬體佇列的緩衝與 QoS。</p></div>
+  </div>
+
+  <h3 class="sub">高低溫帶載（Thermal &amp; HALT）</h3>
+  <div class="grid g3">
+    <div class="card"><div class="label">低溫</div><div class="big" style="color:var(--cold)">−40 °C</div></div>
+    <div class="card"><div class="label">高溫</div><div class="big accent">75 °C</div></div>
+    <div class="card"><div class="label">每個溫度點</div><div class="big">72 h</div><p>44V 輸入＋240W PoE＋全埠 100% 流量</p></div>
+  </div>
+  <p class="lead">過程中透過 Console / SNMP 監控 CPU 使用率、記憶體消耗量與系統日誌（Syslog）。只要出現重啟、PHY 降速或 Link Down，就判定不通過。</p>
+</section>
+
+<!-- 07 -->
+<section id="plan">
+  <div class="eyebrow">07 · PM 專區</div>
+  <h2>測試矩陣與時程 <span class="added">補充</span></h2>
+  <p class="lead">勾選要測的條件，自動算出測試組合數與溫箱需要佔用的時間。每組時間與架設時間為示意值，可依實驗室實際情況調整。</p>
+  <div class="tool">
+    <div class="tool-head"><h4>測試矩陣產生器</h4><span class="eyebrow">封包 × 電壓 × PoE × 溫度</span></div>
+    <div class="tool-body">
+      <div class="controls" id="mx">
+        <div><div class="fieldset-title">封包大小</div><div class="checks" data-g="f">
+          <label><input type="checkbox" value="64" checked>64</label><label><input type="checkbox" value="128">128</label><label><input type="checkbox" value="256">256</label><label><input type="checkbox" value="512">512</label><label><input type="checkbox" value="1024">1024</label><label><input type="checkbox" value="1518" checked>1518</label><label><input type="checkbox" value="IMIX" checked>IMIX</label><label><input type="checkbox" value="10240">10240</label>
+        </div></div>
+        <div><div class="fieldset-title">輸入電壓</div><div class="checks" data-g="v">
+          <label><input type="checkbox" value="44" checked>44V</label><label><input type="checkbox" value="54" checked>54V</label><label><input type="checkbox" value="57">57V</label>
+        </div></div>
+        <div><div class="fieldset-title">PoE 負載</div><div class="checks" data-g="p">
+          <label><input type="checkbox" value="0W" checked>0W</label><label><input type="checkbox" value="240W" checked>240W</label>
+        </div></div>
+        <div><div class="fieldset-title">溫度</div><div class="checks" data-g="t">
+          <label><input type="checkbox" value="-40" checked>−40°C</label><label><input type="checkbox" value="25" checked>25°C</label><label><input type="checkbox" value="75" checked>75°C</label>
+        </div></div>
+        <div class="grid g2" style="margin-top:0;gap:12px">
+          <div class="field"><label for="perMin">每組測試（分鐘）</label><input type="number" id="perMin" min="1" max="600" value="30"></div>
+          <div class="field"><label for="setupH">每個溫度點架設＋升降溫（小時）</label><input type="number" id="setupH" min="0" max="48" value="8"></div>
+        </div>
+        <p class="note">−40 °C 與 75 °C 另加 72 小時 Burn-in；25 °C 不需要溫箱。</p>
+      </div>
+      <div class="screen" aria-live="polite">
+        <div class="row"><span>測試組合數</span><b id="mxCount" class="hot">—</b></div>
+        <div class="row"><span>溫箱佔用時間</span><b id="mxChamber">—</b></div>
+        <div class="total"><span>預估總天數（24 小時連續運轉）</span><b id="mxDays">—</b></div>
+        <div class="gantt" id="gantt"></div>
+        <div class="legend"><span><i style="background:#8C9AA2"></i>架設／升降溫</span><span><i style="background:var(--accent)"></i>矩陣測試</span><span><i style="background:#D98C00"></i>72h Burn-in</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section id="criteria">
+  <div class="eyebrow">08 · 判定</div>
+  <h2>通過標準總表 <span class="added">補充</span></h2>
+  <p class="lead">把散在各章節的標準集中在一起。「規格」來自規格書；「建議」是依測試目的整理的判定；「待定」需要硬體團隊提供數值。</p>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>項目</th><th>通過標準</th><th>適用測試</th><th>來源</th></tr></thead>
+      <tbody>
+        <tr><td>轉發能力</td><td class="v">≥ 41.666 Mpps</td><td>L3 線速（64B）</td><td><span class="pill spec">規格</span></td></tr>
+        <tr><td>交換容量</td><td class="v">56 Gbps</td><td>L3 線速</td><td><span class="pill spec">規格</span></td></tr>
+        <tr><td>掉包</td><td class="v">0</td><td>雙向 100% 線速、所有封包大小</td><td><span class="pill spec">規格</span></td></tr>
+        <tr><td>PoE 供電</td><td>8 埠 × 30W 持續供電，無斷電或重新握手</td><td>功耗、高低溫</td><td><span class="pill sugg">建議</span></td></tr>
+        <tr><td>系統穩定</td><td>無重啟、無 PHY 降速、無 Link Down</td><td>高低溫 72h</td><td><span class="pill sugg">建議</span></td></tr>
+        <tr><td>記憶體</td><td>長時間運轉無持續增長（無洩漏）</td><td>路由表項壓測、72h</td><td><span class="pill sugg">建議</span></td></tr>
+        <tr><td>路由收斂</td><td>路由變動後可正確收斂，無轉發中斷</td><td>Route Churn</td><td><span class="pill sugg">建議</span></td></tr>
+        <tr><td>元件溫升上限</td><td class="v">待定</td><td>功耗、高溫</td><td><span class="pill tbd">待定</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">測試結果紀錄範本 <span class="added">補充</span></h3>
+  <p class="lead">按「複製表格」後，直接貼到 Excel 即可使用。第一列是填寫範例，不是實測資料。</p>
+  <div class="table-wrap">
+    <table class="data" id="recTable">
+      <thead><tr><th>日期</th><th>溫度 (°C)</th><th>輸入電壓 (V)</th><th>PoE 負載 (W)</th><th>封包大小</th><th>流量 (%)</th><th>P_total_in (W)</th><th>P_loss (W)</th><th>掉包數</th><th>最高元件溫度 (°C)</th><th>異常紀錄</th><th>判定</th></tr></thead>
+      <tbody><tr class="example"><td>範例</td><td>75</td><td>44</td><td>240</td><td>64B</td><td>100</td><td>—</td><td>—</td><td>0</td><td>—</td><td>無</td><td>PASS</td></tr></tbody>
+    </table>
+  </div>
+  <div class="copybar"><button class="btn primary" id="copyRec">複製表格</button><span class="note" id="copyMsg" role="status"></span></div>
+</section>
+
+<!-- 09 -->
+<section id="check">
+  <div class="eyebrow">09 · 行動</div>
+  <h2>測試前檢查清單</h2>
+  <p class="lead">勾選狀態只存在你自己的瀏覽器，其他人看不到，也不會同步到別的裝置。</p>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-rd" aria-selected="true" aria-controls="panel-rd">工程準備（RD）</button>
+    <button role="tab" id="tab-pm" aria-selected="false" aria-controls="panel-pm">資源與時程（PM）</button>
+  </div>
+  <div role="tabpanel" id="panel-rd" aria-labelledby="tab-rd">
+    <ul class="checklist" data-list="rd">
+      <li><label><input type="checkbox" id="rd1"><span>封包儀配置 8×1G + 2×10G，設定跨子網 L3 路由</span></label></li>
+      <li><label><input type="checkbox" id="rd2"><span>PoE 負載儀 8 埠 802.3at × 30W，確認支援資料直通，並確認瓦數是在 PSE 端還是 PD 端量</span></label></li>
+      <li><label><input type="checkbox" id="rd3"><span>DC 電源可調 44 / 54 / 57V，額定電流足以應付 44V 時的輸入電流；功率計串接在輸入端</span></label></li>
+      <li><label><input type="checkbox" id="rd4"><span>熱電偶貼附 ASIC、PHY、PoE 控制器、MOSFET 與外殼</span></label></li>
+      <li><label><input type="checkbox" id="rd5"><span>封包大小涵蓋 64B、1518B、IMIX、10240B，payload 設為 PRBS</span></label></li>
+      <li><label><input type="checkbox" id="rd6"><span>Console / SNMP 監控就緒：CPU、記憶體、Syslog</span></label></li>
+    </ul>
+  </div>
+  <div role="tabpanel" id="panel-pm" aria-labelledby="tab-pm" hidden>
+    <ul class="checklist" data-list="pm">
+      <li><label><input type="checkbox" id="pm1"><span>儀器取得方式確認：購買或租借（封包儀、PoE 負載儀）</span></label></li>
+      <li><label><input type="checkbox" id="pm2"><span>溫箱預約：高低溫各 72 小時，至少 6 天，另加架設與升降溫</span></label></li>
+      <li><label><input type="checkbox" id="pm3"><span>通過標準寫進測試計畫：零掉包、不重啟、無 Link Down</span></label></li>
+      <li><label><input type="checkbox" id="pm4"><span>向硬體團隊取得元件溫升上限</span></label></li>
+      <li><label><input type="checkbox" id="pm5"><span>預留失敗重測與散熱改版的時間</span></label></li>
+    </ul>
+  </div>
+  <div class="progress"><span class="note" id="progText">已完成 0 / 0</span><div class="meter" aria-hidden="true"><i id="progBar" style="width:0"></i></div><button class="btn" id="resetChk">清除勾選</button></div>
+</section>
+
+<!-- 10 -->
+<section id="appx">
+  <div class="eyebrow">10 · 附錄</div>
+  <h2>參考資料</h2>
+
+  <h3 class="sub">沒有多埠封包分析儀怎麼辦</h3>
+  <div class="grid g2">
+    <div class="card"><h4>① 流量回環打流法</h4><p>伺服器配雙 10G 網卡（Linux + TRex 或 pktgen）發出 10G 線速進入 SFP+ 1。交換器內 8 個 RJ45 以 VLAN 分組、跳線兩兩串接成菊花鏈，封包在 8 埠循環跑滿 1G 線速後，由 SFP+ 2 返回伺服器監測。</p><div class="formula-line" style="margin-top:12px">Server → SFP+1 → P1⇄P2 → P3⇄P4 → P5⇄P6 → P7⇄P8 → SFP+2 → Server</div></div>
+    <div class="card"><h4>② PoE 實體抽載</h4><p>使用 8 個 PoE+ 假負載治具／負載板（PoE Splitter + 大功率電阻或電子負載），手動設定各埠汲取功率。</p><div class="big accent" style="margin-top:12px">30W × 8 = 240W</div></div>
+  </div>
+
+  <h3 class="sub">RFC 2544 / 2889 重點</h3>
+  <div class="grid g2">
+    <div class="card"><div class="label">網路設備基準測試方法</div><h4>RFC 2544</h4><p>Throughput（零掉包下最大速率）、Latency、Frame Loss Rate、Back-to-Back（可承受的連續突發長度）。標準封包：64 / 128 / 256 / 512 / 1024 / 1280 / 1518 B。</p></div>
+    <div class="card"><div class="label">LAN 交換設備基準測試</div><h4>RFC 2889</h4><p>Fully Meshed（全部埠互打）、Congestion Control（壅塞與隊頭阻塞）、Address Caching / Learning（MAC 表容量與學習速率）、Broadcast（廣播轉發與延遲）。</p></div>
+  </div>
+  <p class="lead">本案應用：RFC 2544 驗證 41.666 Mpps 零掉包；RFC 2889 驗證多埠同時打流與 MAC 學習；10240B Jumbo 為額外加測，不在 RFC 2544 標準尺寸內。</p>
+
+  <h3 class="sub">常見問題 <span class="added">補充</span></h3>
+  <div style="margin-top:12px">
+    <details><summary>為什麼規格書的轉發能力剛好是 41.666 Mpps？</summary><div class="body"><p>它就是 64B 線速：1G 埠 1.488 Mpps × 8 ＋ 10G 埠 14.88 Mpps × 2 ≈ 41.666 Mpps。交換容量 56 Gbps 則是 (8×1G + 2×10G) × 2（全雙工，收與送各算一次）。</p></div></details>
+    <details><summary>IMIX 是什麼？</summary><div class="body"><p>Internet Mix，混合不同大小封包的測試流量，模擬真實網路。最常見的 Simple IMIX 是 64B : 594B : 1518B = 7 : 4 : 1（依個數），平均約 362B，1G 埠線速約 327 kpps。</p><p>IMIX 沒有唯一標準，Spirent、IXIA 各有版本，RFC 6985 規範了標示方式。測試計畫與報告要寫清楚用哪一種。</p></div></details>
+    <details><summary>為什麼 44V 比 54V 嚴苛？</summary><div class="body"><p>功率 P = V × I。輸入功率相同時，電壓越低電流越大，內部 DC-DC 轉換與導線的發熱（I²R）也越高。上方的功耗計算器可以直接看到差異。</p></div></details>
+    <details><summary>每埠 30W 和 25.5W 差在哪？</summary><div class="body"><p>30W 是交換器（PSE）每埠的輸出上限，25.5W 是受電設備（PD）端保證收到的功率，差額是 100m 網路線的損耗上限。測試時要確認負載儀的設定是哪一端。</p></div></details>
+    <details><summary>72 小時是怎麼決定的？</summary><div class="body"><p>來自本測試規劃的 Burn-in 要求，用來觀察長時間運轉下的熱平衡、記憶體洩漏與偶發錯誤。實際時數可依產品驗證規範或客戶要求調整。</p></div></details>
+    <details><summary>沒有 Spirent / IXIA 能做嗎？</summary><div class="body"><p>可以先用附錄的替代方案：TRex 或 pktgen 搭配菊花鏈回環打流，PoE 用假負載治具。但量測精度與 RFC 報告的完整度會受限，正式驗證仍建議使用專用儀器。</p></div></details>
+  </div>
+
+  <h3 class="sub">名詞表</h3>
+  <div class="glossary">
+    <div><b>pps</b><p>每秒封包數，衡量交換晶片忙不忙。</p></div>
+    <div><b>PSE / PD</b><p>供電端（交換器）／受電設備（IP Cam、AP 等）。</p></div>
+    <div><b>L3 路由轉發</b><p>依 IP 位址跨子網轉送，每個封包都要查路由表。</p></div>
+    <div><b>TCAM / FIB</b><p>晶片內高速查表記憶體／轉發表。</p></div>
+    <div><b>IMIX</b><p>混合大小封包的測試流量，模擬真實網路。</p></div>
+    <div><b>PRBS</b><p>偽隨機位元序列，用作測試 payload。</p></div>
+    <div><b>IFG</b><p>封包間隔，固定 12 Bytes。</p></div>
+    <div><b>WRR</b><p>依權重輪流服務各佇列的調度方式。</p></div>
+    <div><b>Micro-burst</b><p>極短時間內的突發流量，考驗緩衝。</p></div>
+    <div><b>Burn-in</b><p>長時間帶載運轉，篩出早期失效。</p></div>
+    <div><b>P_loss</b><p>交換機自身損耗 = 輸入總功率 − PoE 輸出。</p></div>
+    <div><b>RFC 2544 / 2889</b><p>網路設備／LAN 交換器的基準測試方法。</p></div>
+  </div>
+</section>
+
+<footer>內部分享用，請勿外流。標示「補充」的內容不在原始測試規劃內，使用前請與團隊確認。</footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* question reveal */
+  $('revealBtn').addEventListener('click', function(){
+    var a=$('answer'); a.hidden=!a.hidden;
+    this.setAttribute('aria-expanded', String(!a.hidden));
+    this.textContent = a.hidden ? '看答案' : '收起答案';
+  });
+
+  /* myth flip */
+  document.querySelectorAll('.flip').forEach(function(b){
+    b.addEventListener('click',function(){ b.setAttribute('aria-pressed', b.getAttribute('aria-pressed')==='true'?'false':'true'); });
+  });
+
+  /* tooltips on tap */
+  document.querySelectorAll('.term').forEach(function(t){
+    t.addEventListener('click',function(e){ e.stopPropagation(); var o=t.classList.contains('open'); document.querySelectorAll('.term.open').forEach(function(x){x.classList.remove('open')}); if(!o) t.classList.add('open'); });
+  });
+  document.addEventListener('click',function(){ document.querySelectorAll('.term.open').forEach(function(x){x.classList.remove('open')}); });
+
+  /* scrollspy */
+  var links=[].slice.call(document.querySelectorAll('#toc a'));
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ links.forEach(function(l){ var on=l.getAttribute('href')==='#'+e.target.id; l.classList.toggle('on',on); if(on && l.scrollIntoView && window.innerWidth<820){ l.parentNode.scrollLeft = l.offsetLeft - 20; } }); } });
+    },{rootMargin:'-40% 0px -55% 0px'});
+    document.querySelectorAll('main section').forEach(function(s){ io.observe(s); });
+  }
+
+  /* architecture */
+  var NODES={
+    psu:{t:'可編程直流電源供應器',m:'Keysight N6700C\nChroma 62000P 系列',u:['規格至少 60V / 10A / 600W','提供 54VDC 穩定供電','模擬輸入上下限 44V / 57V']},
+    meter:{t:'數位功率計／功率分析儀',m:'Yokogawa WT310E / WT500',u:['串接於電源與 DC Terminal Block 之間','記錄總輸入電流、電壓','靜態功耗與最大動態功率 P_max']},
+    dut:{t:'待測物：L3 PoE+ Switch Hub',m:'8× 1G RJ45 PoE+ ｜ 2× 1G/10G SFP+',u:['DC 44～57V 雙重輸入','PoE 預算 240W（802.3af/at）','IPv4/IPv6 靜態路由、RIP、OSPFv2/v3']},
+    poe:{t:'多埠 PoE 負載模擬器',m:'Sifos PSA-3000 / PSA-3204\nReach Technology 24-Port PoE Load Tester',u:['同時連接 8 個 RJ45 埠，模擬 802.3at Type 2（Class 4）PD','每埠抽載 30W，8 埠合計 240W','即時監控每埠 V / I / P 與握手狀態']},
+    tg:{t:'多埠封包產生器／分析儀',m:'Spirent TestCenter\nIXIA (Keysight) XGS12 / AresONE\nXena Networks',u:['配置 8 埠 1G RJ45 + 2 埠 10G SFP+ 模組','100% 全雙工線速、RFC 2544 / RFC 2889','Jitter、Latency、Zero Packet Loss 監控']},
+    temp:{t:'多通道溫度記錄器／熱像儀',m:'Graphtec GL840\nFLIR 熱像儀',u:['T-Type 熱電偶貼附關鍵元件','ASIC、PHY、PoE 控制器、MOSFET、外殼','監控溫升與熱平衡點']}
+  };
+  var nodes=document.querySelectorAll('#arch .node');
+  function showNode(k){
+    var d=NODES[k];
+    nodes.forEach(function(n){ n.setAttribute('aria-pressed', String(n.dataset.k===k)); });
+    $('detail').innerHTML='<div class="eyebrow">建議型號</div><h4></h4><div class="models"></div><ul></ul>';
+    $('detail').querySelector('h4').textContent=d.t;
+    $('detail').querySelector('.models').textContent=d.m;
+    var ul=$('detail').querySelector('ul');
+    d.u.forEach(function(x){ var li=document.createElement('li'); li.textContent=x; ul.appendChild(li); });
+  }
+  nodes.forEach(function(n){ n.addEventListener('click',function(){ showNode(n.dataset.k); }); });
+  showNode('poe');
+
+  /* power calculator */
+  function power(){
+    var ptot=Math.max(0, +$('ptot').value||0), w=+$('poeW').value, n=+$('poeN').value, psuA=+$('psuA').value;
+    var ppoe=w*n, loss=ptot-ppoe;
+    $('ptotOut').textContent=ptot; $('poeWOut').textContent=w.toFixed(1); $('poeNOut').textContent=n; $('psuAOut').textContent=psuA;
+    $('ppoe').textContent=ppoe.toFixed(1)+' W';
+    var valid=loss>=0 && ptot>0;
+    $('ploss').textContent= valid ? loss.toFixed(1)+' W' : '—';
+    $('plossPct').textContent= valid ? (loss/ptot*100).toFixed(1)+' %' : '—';
+    $('barPoe').style.flexGrow=Math.max(ppoe,0.001); $('barPoe').textContent= ppoe>0 ? 'PoE '+ppoe.toFixed(0)+'W' : '';
+    $('barLoss').style.flexGrow= valid ? Math.max(loss,0.001) : 0.001; $('barLoss').textContent= valid ? 'P_loss' : '';
+    var rows='', worst=0;
+    [44,54,57].forEach(function(v){
+      var i=ptot/v, margin=(psuA-i)/psuA*100; worst=Math.max(worst,i);
+      rows+='<tr><td>'+v+' V</td><td'+(v===44?' class="warn"':'')+'>'+i.toFixed(2)+' A</td><td>'+(margin>=0?margin.toFixed(0)+' %':'不足')+'</td></tr>';
+    });
+    $('vrows').innerHTML=rows;
+    var vd=$('pverdict');
+    if(!valid){ vd.innerHTML='輸入總功率小於 PoE 負載，請確認數值。'; }
+    else if(worst>psuA){ vd.innerHTML='44V 時電流 <strong>'+worst.toFixed(2)+' A</strong> 超過電源額定 '+psuA+' A，需要更大的電源。'; }
+    else { vd.innerHTML='44V 時電流最大：<strong>'+worst.toFixed(2)+' A</strong>，電源 '+psuA+' A 還有 '+((psuA-worst)/psuA*100).toFixed(0)+'% 餘裕。'; }
+  }
+  ['ptot','poeW','poeN','psuA'].forEach(function(id){ $(id).addEventListener('input',power); });
+  power();
+
+  /* line-rate calculator */
+  var SPEC=41.666e6, range=$('fsize');
+  var imixWire=(7*(64+20)+4*(594+20)+1*(1518+20))/12;
+  function fmt(p){ return p>=1e6 ? (p/1e6).toFixed(3)+' Mpps' : (p/1e3).toFixed(1)+' kpps'; }
+  function lr(mode){
+    var wire = mode==='imix' ? imixWire : (+range.value+20);
+    var p1=1e9/(wire*8), p10=1e10/(wire*8), all=8*p1+2*p10, ref=1e9/(1538*8);
+    $('fout').textContent = mode==='imix' ? 'IMIX' : range.value;
+    $('p1').textContent=fmt(p1); $('p10').textContent=fmt(p10); $('pall').textContent=fmt(all);
+    $('ratio').textContent=(p1/ref).toFixed(1)+' ×';
+    var pct=all/SPEC*100;
+    $('lrBar').style.width=Math.min(100,pct)+'%';
+    $('imixnote').hidden = mode!=='imix';
+    $('lrVerdict').innerHTML = pct>=99.99
+      ? '達到規格 <strong>41.666 Mpps</strong> 的 100%：這就是規格書轉發能力的來源。'
+      : '只用到規格轉發能力的 <strong>'+pct.toFixed(1)+'%</strong>：頻寬滿了，但晶片查表沒那麼忙。';
+    document.querySelectorAll('#lrPresets button').forEach(function(b){
+      b.setAttribute('aria-pressed', String(mode==='imix' ? b.dataset.f==='imix' : b.dataset.f===range.value));
+    });
+  }
+  range.addEventListener('input',function(){ lr(); });
+  document.querySelectorAll('#lrPresets button').forEach(function(b){
+    b.addEventListener('click',function(){ if(b.dataset.f!=='imix') range.value=b.dataset.f; lr(b.dataset.f==='imix'?'imix':undefined); });
+  });
+  lr();
+
+  /* matrix + gantt */
+  function picked(g){ return [].slice.call(document.querySelectorAll('#mx .checks[data-g="'+g+'"] input:checked')).map(function(i){return i.value;}); }
+  function hfmt(h){ return h>=24 ? (h/24).toFixed(1)+' 天（'+Math.round(h)+' h）' : h.toFixed(1)+' h'; }
+  function matrix(){
+    var f=picked('f'), v=picked('v'), p=picked('p'), t=picked('t');
+    var per=Math.max(1,+$('perMin').value||30)/60, setup=Math.max(0,+$('setupH').value||0);
+    var perTemp=f.length*v.length*p.length, count=perTemp*t.length;
+    $('mxCount').textContent=count+' 組';
+    var phases=t.map(function(x){
+      var extreme = x!=='25';
+      return {t:x, setup: extreme?setup:0, test: perTemp*per, burn: extreme?72:0};
+    });
+    var chamber=phases.reduce(function(a,ph){ return a+(ph.t!=='25' ? ph.setup+ph.test+ph.burn : 0); },0);
+    var total=phases.reduce(function(a,ph){ return a+ph.setup+ph.test+ph.burn; },0);
+    $('mxChamber').textContent = chamber>0 ? hfmt(chamber) : '不需要溫箱';
+    $('mxDays').textContent = count ? (total/24).toFixed(1)+' 天' : '—';
+    var g=$('gantt'); g.innerHTML='';
+    if(!count){ g.innerHTML='<div class="verdict">請至少在每一類各勾選一項。</div>'; return; }
+    var start=0;
+    phases.forEach(function(ph){
+      var row=document.createElement('div'); row.className='bar-row';
+      var lab=document.createElement('span'); lab.textContent=(ph.t==='-40'?'−40':ph.t)+' °C'; lab.style.color='var(--on-panel-muted)';
+      var tr=document.createElement('div'); tr.className='track';
+      [['setup',ph.setup,'架設'],['test',ph.test,'矩陣'],['burn',ph.burn,'72h']].forEach(function(s){
+        if(s[1]<=0) return;
+        var d=document.createElement('div'); d.className='seg '+s[0];
+        d.style.left=(start/total*100)+'%'; d.style.width=(s[1]/total*100)+'%';
+        d.textContent=s[1]/total>0.08 ? s[2] : ''; d.title=s[2]+' '+s[1].toFixed(1)+' h';
+        tr.appendChild(d); start+=s[1];
+      });
+      row.appendChild(lab); row.appendChild(tr); g.appendChild(row);
+    });
+  }
+  document.querySelectorAll('#mx input').forEach(function(i){ i.addEventListener('input',matrix); i.addEventListener('change',matrix); });
+  matrix();
+
+  /* copy record table */
+  $('copyRec').addEventListener('click',function(){
+    var rows=[].slice.call($('recTable').querySelectorAll('tr')).map(function(tr){
+      return [].slice.call(tr.children).map(function(c){ return c.textContent.trim(); }).join('\t');
+    }).join('\n');
+    var msg=$('copyMsg');
+    function fallback(){
+      var ta=document.createElement('textarea'); ta.value=rows; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+      var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta);
+      msg.textContent= ok ? '已複製，可以直接貼到 Excel。' : '瀏覽器不允許自動複製，請手動選取表格複製。';
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(rows).then(function(){ msg.textContent='已複製，可以直接貼到 Excel。'; }, fallback);
+    } else fallback();
+  });
+
+  /* checklist */
+  var KEY='l3sw-checklist-v1', state={};
+  try{ state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}; }catch(e){ state={}; }
+  var boxes=[].slice.call(document.querySelectorAll('.checklist input'));
+  function prog(){
+    var done=boxes.filter(function(b){return b.checked;}).length;
+    $('progText').textContent='已完成 '+done+' / '+boxes.length;
+    $('progBar').style.width=(done/boxes.length*100)+'%';
+  }
+  boxes.forEach(function(b){
+    b.checked=!!state[b.id];
+    b.addEventListener('change',function(){ state[b.id]=b.checked; try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){} prog(); });
+  });
+  $('resetChk').addEventListener('click',function(){ boxes.forEach(function(b){b.checked=false;}); state={}; try{ localStorage.removeItem(KEY); }catch(e){} prog(); });
+  prog();
+  var tabs=[$('tab-rd'),$('tab-pm')];
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){
+      tabs.forEach(function(x){ var on=x===t; x.setAttribute('aria-selected',String(on)); $(x.getAttribute('aria-controls')).hidden=!on; });
+    });
+  });
+})();
+</script>
+</body>
+</html>
