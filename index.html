@@ -167,7 +167,53 @@ input[type=number]{width:100%;font:600 16px var(--f-mono);padding:8px 10px;borde
 .steps .sym{font-family:var(--f-mono);font-size:15px;color:var(--accent-ink);margin-top:2px}
 .steps p{color:var(--muted);font-size:15px;margin-top:6px}
 
-/* architecture */
+/* architecture bench (animated wiring diagram) */
+.bench{margin-top:24px;background:var(--panel);border-radius:8px;overflow:hidden;
+  --c-pw:#F2B21B; --c-poe:#F07A2A; --c-data:#5FB3F0; --c-meas:#AAB5BB; --c-node:#36424A; --c-edge:#56636B; --c-port:#141A1D}
+.bench-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--panel-2)}
+.stages,.ctrls{display:flex;flex-wrap:wrap;gap:6px}
+.stages button,.ctrls button{appearance:none;font:600 13px var(--f-body);padding:6px 12px;border-radius:5px;border:1px solid var(--panel-2);background:transparent;color:var(--on-panel);cursor:pointer}
+.stages button:hover,.ctrls button:hover{border-color:var(--on-panel-muted)}
+.stages button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#1A1A1A}
+.ctrls button.primary{background:var(--accent);border-color:var(--accent);color:#1A1A1A}
+.speed{display:inline-flex;align-items:center;border:1px solid var(--panel-2);border-radius:5px;overflow:hidden}
+.speed span{font-size:12px;color:var(--on-panel-muted);padding:0 8px}
+.ctrls .speed button{border:0;border-left:1px solid var(--panel-2);border-radius:0;padding:6px 10px}
+.ctrls .speed button[aria-pressed="true"]{background:var(--panel-2);color:var(--accent)}
+.diagram{overflow-x:auto;padding:8px 10px 0}
+.diagram svg{display:block;width:100%;min-width:700px;height:auto}
+.caption{display:flex;gap:12px;align-items:flex-start;padding:14px 18px 18px;border-top:1px solid var(--panel-2);color:var(--on-panel);min-height:84px}
+.caption > div{flex:1;min-width:0}
+.caption .stepno{flex:none;font:700 13px var(--f-body);padding:2px 8px;border-radius:4px;background:var(--panel-2);color:var(--on-panel-muted)}
+.caption .stepno.on{background:var(--accent);color:#1A1A1A}
+.caption p{font-size:15px}
+.caption p + p{color:var(--on-panel-muted);font-size:13.5px;margin-top:2px}
+.caption .sym{flex:none;font:600 18px var(--f-mono);color:var(--accent);align-self:center}
+#asvg text{font-family:var(--f-body)}
+#asvg .nd{cursor:pointer;outline:none}
+#asvg .nd rect:first-child{fill:var(--c-node);stroke:var(--c-edge);stroke-width:1.5;transition:stroke .2s}
+#asvg .nd.dut > rect:first-child{fill:#1C2428}
+#asvg .nd:hover rect:first-child,#asvg .nd:focus-visible rect:first-child{stroke:var(--on-panel-muted)}
+#asvg .nd.sel rect:first-child{stroke:var(--accent);stroke-width:2.5}
+#asvg .nt{fill:var(--on-panel);font-size:14px;font-weight:700}
+#asvg .ns{fill:var(--on-panel-muted);font-size:11.5px}
+#asvg .pt{fill:var(--c-port);stroke:var(--c-edge)}
+#asvg .term{fill:var(--c-pw)}
+#asvg .ln{fill:none;stroke:#4A5760;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:.55;transition:opacity .2s}
+#asvg .ln.on{opacity:1;stroke-width:4;stroke-dasharray:12 8;animation:aflow var(--flow-dur,.9s) linear infinite}
+#asvg .ln.pw.on{stroke:var(--c-pw)}
+#asvg .ln.poe.on{stroke:var(--c-poe)}
+#asvg .ln.data.on{stroke:var(--c-data)}
+#asvg .ln.meas.on{stroke:var(--c-meas);stroke-width:2.5;stroke-dasharray:4 6;animation:none}
+@keyframes aflow{to{stroke-dashoffset:-20}}
+#asvg .lk{fill:var(--on-panel-muted);font-size:11px}
+#asvg .lk.poe-t{fill:var(--c-poe)}
+#asvg .lk.data-t{fill:var(--c-data)}
+#asvg .chamber rect{fill:rgba(95,179,240,.06);stroke:var(--c-data);stroke-width:2;stroke-dasharray:8 6}
+#asvg .chamber text{fill:var(--c-data);font-size:12px;font-weight:700}
+#asvg .chamber{opacity:0;transition:opacity .3s}
+#asvg .chamber.on{opacity:1}
+/* architecture (legacy grid, no longer used) */
 .arch{display:grid;grid-template-columns:minmax(0,1fr) 88px minmax(0,1.2fr) 88px minmax(0,1fr);grid-template-rows:auto auto auto;gap:12px 0;align-items:center;margin-top:24px}
 .node{appearance:none;font:inherit;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;color:var(--fg);min-width:0}
 .node:hover{border-color:var(--muted)}
@@ -376,21 +422,71 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:24px;font-
 <section id="setup">
   <div class="eyebrow">04 · 測試架構</div>
   <h2>儀器怎麼接</h2>
-  <p class="lead">點選任一台儀器，下方會顯示用途、建議型號與關鍵規格。</p>
-  <div class="arch" id="arch">
-    <button class="node" data-k="psu" style="grid-column:1;grid-row:1"><b>直流電源供應器</b><span>可調 44 / 54 / 57V</span></button>
-    <button class="node" data-k="meter" style="grid-column:1;grid-row:2"><b>功率分析儀</b><span>量輸入 V / I / P</span></button>
-    <div class="conn" style="grid-column:2;grid-row:2"><span>DC 輸入</span></div>
-    <button class="node dut" data-k="dut" style="grid-column:3;grid-row:1 / span 2"><b>L3 PoE+ Switch Hub</b><span>待測物<br>8× RJ45 PoE+ ｜ 2× SFP+</span></button>
-    <div class="conn poe" style="grid-column:4;grid-row:1"><span>Port 1~8</span></div>
-    <div class="conn" style="grid-column:4;grid-row:2"><span>全部 10 埠</span></div>
-    <button class="node" data-k="poe" style="grid-column:5;grid-row:1"><b>PoE 負載模擬器</b><span>8 埠 × 30W</span></button>
-    <button class="node" data-k="tg" style="grid-column:5;grid-row:2"><b>封包產生器／分析儀</b><span>8×1G + 2×10G</span></button>
-    <div class="vconn" style="grid-row:3">熱電偶</div>
-    <button class="node" data-k="temp" style="grid-column:3;grid-row:4"><b>溫度記錄器／熱像儀</b><span>監控溫升與熱平衡點</span></button>
+  <p class="lead">切換測試階段，看每個階段有哪些線路在工作；四個階段正好對應下一節的功耗三步量測與高低溫測試。點選圖中任一台儀器，下方會顯示用途、建議型號與關鍵規格。</p>
+
+  <div class="bench">
+    <div class="bench-head">
+      <div class="stages" role="group" aria-label="測試階段" id="stages">
+        <button data-s="0" aria-pressed="false">① 靜態開機</button><button data-s="1" aria-pressed="false">② 網路滿載</button><button data-s="2" aria-pressed="false">③ 極限最大</button><button data-s="3" aria-pressed="false">④ 高低溫</button>
+      </div>
+      <div class="ctrls" role="group" aria-label="動畫控制">
+        <button id="aPrev">上一步</button><button id="aNext">下一步</button>
+        <div class="speed" role="group" aria-label="播放速度" id="archSpeed"><span>速度</span><button data-speed="slow" aria-pressed="false">慢</button><button data-speed="normal" aria-pressed="true">中</button><button data-speed="fast" aria-pressed="false">快</button></div>
+        <button id="aPlay" class="primary">▶ 播放</button>
+      </div>
+    </div>
+    <div class="diagram">
+      <svg id="asvg" viewBox="0 0 960 470" role="img" aria-labelledby="asvgTitle">
+        <title id="asvgTitle">測試架構接線圖：直流電源經功率分析儀接到交換器；交換器 Port 1~8 接 PoE 負載模擬器；封包產生器的 1G 線經 PoE 負載模擬器資料直通接到 Port 1~8，10G 線接 SFP+；熱電偶接溫度記錄器；交換器以 Console / SNMP 接監控電腦。</title>
+        <defs>
+          <marker id="mkA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="mk"/></marker>
+        </defs>
+        <!-- chamber (stage 4) -->
+        <g id="chamber" class="chamber">
+          <rect x="296" y="120" width="328" height="214" rx="12"/>
+          <text x="614" y="324" text-anchor="end">溫箱 −40 / 75 °C · 72 h</text>
+        </g>
+        <!-- links -->
+        <path id="lnPw1"  class="ln pw" d="M105 104 L105 170"/>
+        <path id="lnPw2"  class="ln pw" d="M190 202 L330 202"/>
+        <path id="lnPoe"  class="ln poe" d="M560 160 L560 66 L720 66"/>
+        <path id="lnD1a"  class="ln data" d="M840 230 L840 112"/>
+        <path id="lnD1b"  class="ln data" d="M720 92 L580 92 L580 160"/>
+        <path id="lnD10"  class="ln data" d="M720 268 L590 268"/>
+        <path id="lnTemp" class="ln meas" d="M460 300 L460 380"/>
+        <path id="lnMon"  class="ln meas" d="M330 278 L260 278 L260 362 L190 362"/>
+        <!-- link labels -->
+        <text class="lk" x="114" y="142">DC 44 / 54 / 57 V</text>
+        <text class="lk" x="260" y="194" text-anchor="middle">DC 端子台</text>
+        <text class="lk poe-t" x="640" y="58" text-anchor="middle">PoE · 8 × 30 W</text>
+        <text class="lk data-t" x="648" y="108" text-anchor="middle">8 × 1G 資料（直通）</text>
+        <text class="lk data-t" x="850" y="176">8 × 1G</text>
+        <text class="lk data-t" x="655" y="260" text-anchor="middle">2 × 10G</text>
+        <text class="lk" x="470" y="350">熱電偶</text>
+        <text class="lk" x="268" y="324">Console / SNMP</text>
+        <!-- nodes -->
+        <g class="nd" data-k="psu" tabindex="0" role="button" aria-label="直流電源供應器"><rect x="20" y="40" width="170" height="64" rx="8"/><text class="nt" x="105" y="68" text-anchor="middle">直流電源供應器</text><text class="ns" x="105" y="88" text-anchor="middle">可調 44 / 54 / 57 V</text></g>
+        <g class="nd" data-k="meter" tabindex="0" role="button" aria-label="功率分析儀"><rect x="20" y="170" width="170" height="64" rx="8"/><text class="nt" x="105" y="198" text-anchor="middle">功率分析儀</text><text class="ns" x="105" y="218" text-anchor="middle">量輸入 V / I / P</text></g>
+        <g class="nd" data-k="mon" tabindex="0" role="button" aria-label="監控電腦"><rect x="20" y="330" width="170" height="64" rx="8"/><text class="nt" x="105" y="358" text-anchor="middle">監控電腦</text><text class="ns" x="105" y="378" text-anchor="middle">Console / SNMP</text></g>
+        <g class="nd dut" data-k="dut" tabindex="0" role="button" aria-label="待測物 L3 PoE+ Switch Hub">
+          <rect x="330" y="160" width="260" height="140" rx="10"/>
+          <text class="nt" x="460" y="190" text-anchor="middle">L3 PoE+ Switch Hub</text>
+          <text class="ns" x="460" y="208" text-anchor="middle">待測物</text>
+          <g id="dutPorts"></g>
+        </g>
+        <g class="nd" data-k="poe" tabindex="0" role="button" aria-label="PoE 負載模擬器"><rect x="720" y="40" width="220" height="72" rx="8"/><text class="nt" x="830" y="68" text-anchor="middle">PoE 負載模擬器</text><text class="ns" x="830" y="90" text-anchor="middle">8 埠 × 30 W ｜ 資料直通</text></g>
+        <g class="nd" data-k="tg" tabindex="0" role="button" aria-label="封包產生器／分析儀"><rect x="720" y="230" width="220" height="72" rx="8"/><text class="nt" x="830" y="258" text-anchor="middle">封包產生器／分析儀</text><text class="ns" x="830" y="280" text-anchor="middle">8 × 1G ＋ 2 × 10G</text></g>
+        <g class="nd" data-k="temp" tabindex="0" role="button" aria-label="溫度記錄器／熱像儀"><rect x="330" y="380" width="260" height="60" rx="8"/><text class="nt" x="460" y="406" text-anchor="middle">溫度記錄器／熱像儀</text><text class="ns" x="460" y="426" text-anchor="middle">ASIC / PHY / PoE / MOSFET / 外殼</text></g>
+      </svg>
+    </div>
+    <div class="caption" aria-live="polite">
+      <span class="stepno" id="aStepNo">—</span>
+      <div><p id="aCap">選一個測試階段，或按「播放」依序看四個階段。</p><p id="aSub">線條顏色：琥珀＝電源、橘＝PoE、藍＝資料流量、灰虛線＝量測與監控。</p></div>
+      <div class="sym" id="aSym"></div>
+    </div>
   </div>
   <div class="detail" id="detail" aria-live="polite"></div>
-  <div class="callout"><b>接線注意：</b>同一個 RJ45 要同時承載 PoE 與資料流量。PoE 負載儀需支援資料直通（pass-through），或串接 PoE Splitter，封包儀才收得到流量。</div>
+  <div class="callout"><b>接線注意：</b>同一個 RJ45 要同時承載 PoE 與資料流量。圖中封包產生器的 8 條 1G 線，先接到 PoE 負載模擬器的資料直通埠，再由負載模擬器接到交換器 Port 1～8。負載儀不支援直通時，改用 PoE Splitter。</div>
 </section>
 
 <!-- 05 -->
@@ -681,20 +777,81 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:24px;font-
     dut:{t:'待測物：L3 PoE+ Switch Hub',m:'8× 1G RJ45 PoE+ ｜ 2× 1G/10G SFP+',u:['DC 44～57V 雙重輸入','PoE 預算 240W（802.3af/at）','IPv4/IPv6 靜態路由、RIP、OSPFv2/v3']},
     poe:{t:'多埠 PoE 負載模擬器',m:'Sifos PSA-3000 / PSA-3204\nReach Technology 24-Port PoE Load Tester',u:['同時連接 8 個 RJ45 埠，模擬 802.3at Type 2（Class 4）PD','每埠抽載 30W，8 埠合計 240W','即時監控每埠 V / I / P 與握手狀態']},
     tg:{t:'多埠封包產生器／分析儀',m:'Spirent TestCenter\nIXIA (Keysight) XGS12 / AresONE\nXena Networks',u:['配置 8 埠 1G RJ45 + 2 埠 10G SFP+ 模組','100% 全雙工線速、RFC 2544 / RFC 2889','Jitter、Latency、Zero Packet Loss 監控']},
-    temp:{t:'多通道溫度記錄器／熱像儀',m:'Graphtec GL840\nFLIR 熱像儀',u:['T-Type 熱電偶貼附關鍵元件','ASIC、PHY、PoE 控制器、MOSFET、外殼','監控溫升與熱平衡點']}
+    temp:{t:'多通道溫度記錄器／熱像儀',m:'Graphtec GL840\nFLIR 熱像儀',u:['T-Type 熱電偶貼附關鍵元件','ASIC、PHY、PoE 控制器、MOSFET、外殼','監控溫升與熱平衡點']},
+    mon:{t:'監控電腦（Console / SNMP）',m:'Console 線＋終端機軟體\nSNMP 管理工具',u:['監控 CPU 使用率與記憶體消耗量','收集系統日誌（Syslog）','記錄重啟、PHY 降速、Link Down 等異常']}
   };
-  var nodes=document.querySelectorAll('#arch .node');
+  var nodes=document.querySelectorAll('#asvg .nd');
+  /* DUT front ports */
+  (function(){
+    var g=$('dutPorts'), NS='http://www.w3.org/2000/svg';
+    function r(x,w,cls){ var e=document.createElementNS(NS,'rect'); e.setAttribute('x',x); e.setAttribute('y',232); e.setAttribute('width',w); e.setAttribute('height',18); e.setAttribute('rx',2); e.setAttribute('class',cls); g.appendChild(e); }
+    function t(x,s){ var e=document.createElementNS(NS,'text'); e.setAttribute('x',x); e.setAttribute('y',268); e.setAttribute('text-anchor','middle'); e.setAttribute('class','ns'); e.textContent=s; g.appendChild(e); }
+    for(var i=0;i<8;i++) r(346+i*22,18,'pt');
+    r(530,22,'pt sfp'); r(556,22,'pt sfp');
+    t(423,'P1 ～ P8 PoE+'); t(555,'SFP+');
+    var d=document.createElementNS(NS,'rect'); d.setAttribute('x',322); d.setAttribute('y',192); d.setAttribute('width',12); d.setAttribute('height',22); d.setAttribute('rx',2); d.setAttribute('class','term'); g.appendChild(d);
+  })();
   function showNode(k){
     var d=NODES[k];
-    nodes.forEach(function(n){ n.setAttribute('aria-pressed', String(n.dataset.k===k)); });
+    nodes.forEach(function(n){ n.classList.toggle('sel', n.dataset.k===k); n.setAttribute('aria-pressed', String(n.dataset.k===k)); });
     $('detail').innerHTML='<div class="eyebrow">建議型號</div><h4></h4><div class="models"></div><ul></ul>';
     $('detail').querySelector('h4').textContent=d.t;
     $('detail').querySelector('.models').textContent=d.m;
     var ul=$('detail').querySelector('ul');
     d.u.forEach(function(x){ var li=document.createElement('li'); li.textContent=x; ul.appendChild(li); });
   }
-  nodes.forEach(function(n){ n.addEventListener('click',function(){ showNode(n.dataset.k); }); });
+  nodes.forEach(function(n){
+    n.addEventListener('click',function(){ showNode(n.dataset.k); });
+    n.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showNode(n.dataset.k); } });
+  });
   showNode('poe');
+
+  /* architecture stages */
+  var PW=['lnPw1','lnPw2'], DATA=['lnD1a','lnD1b','lnD10'];
+  var STAGES=[
+    {sym:'P_idle', on:PW, chamber:false,
+     cap:'只接電源：設備開機、未插任何網線，量測靜態功耗。',
+     sub:'功率分析儀串在電源與 DC 端子台之間，54 V 與 44 V 各量一次。'},
+    {sym:'P_system_max', on:PW.concat(DATA), chamber:false,
+     cap:'電源＋資料流量：10 埠全部 100% 線速打流，不開 PoE。',
+     sub:'64B、1518B、IMIX 各量一次取最大值。8 條 1G 線經過 PoE 負載模擬器的資料直通接到 Port 1～8。'},
+    {sym:'P_total_in', on:PW.concat(DATA,['lnPoe','lnTemp']), chamber:false,
+     cap:'電源＋資料＋PoE 同時：8 埠各抽 30 W，合計 240 W，這就是最壞工況。',
+     sub:'熱電偶記錄關鍵元件溫升。交換機自身損耗 P_loss = P_total_in − P_PoE_load。'},
+    {sym:'72 h × 2', on:PW.concat(DATA,['lnPoe','lnTemp','lnMon']), chamber:true,
+     cap:'整台待測物放進溫箱，44 V 輸入＋240 W PoE＋全埠滿載，−40 °C 與 75 °C 各跑 72 小時。',
+     sub:'監控電腦透過 Console / SNMP 盯 CPU、記憶體與 Syslog；出現重啟、PHY 降速或 Link Down 即不通過。'}
+  ];
+  var ALL=['lnPw1','lnPw2','lnPoe','lnD1a','lnD1b','lnD10','lnTemp','lnMon'];
+  var stage=2, aTimer=0;
+  var stageBtns=document.querySelectorAll('#stages button');
+  function showStage(i){
+    var s=STAGES[i];
+    ALL.forEach(function(id){ $(id).classList.toggle('on', s.on.indexOf(id)>=0); });
+    $('chamber').classList.toggle('on', s.chamber);
+    stageBtns.forEach(function(b){ b.setAttribute('aria-pressed', String(+b.dataset.s===i)); });
+    $('aStepNo').textContent=stageBtns[i].textContent; $('aStepNo').className='stepno on';
+    $('aCap').textContent=s.cap; $('aSub').textContent=s.sub; $('aSym').textContent=s.sym;
+  }
+  var A_GAP={slow:6500, normal:4200, fast:2200}, A_FLOW={slow:'1.6s', normal:'.9s', fast:'.45s'}, aGap=A_GAP.normal;
+  function aStop(){ clearInterval(aTimer); aTimer=0; $('aPlay').textContent='▶ 播放'; }
+  function aStart(){ clearInterval(aTimer); aTimer=setInterval(function(){ stage=(stage+1)%STAGES.length; showStage(stage); }, aGap); }
+  $('aPlay').addEventListener('click',function(){
+    if(aTimer){ aStop(); return; }
+    $('aPlay').textContent='❚❚ 暫停';
+    stage=(stage+1)%STAGES.length; showStage(stage); aStart();
+  });
+  $('aNext').addEventListener('click',function(){ aStop(); stage=Math.min(STAGES.length-1,stage+1); showStage(stage); });
+  $('aPrev').addEventListener('click',function(){ aStop(); stage=Math.max(0,stage-1); showStage(stage); });
+  stageBtns.forEach(function(b){ b.addEventListener('click',function(){ aStop(); stage=+b.dataset.s; showStage(stage); }); });
+  document.querySelectorAll('#archSpeed button').forEach(function(b){
+    b.addEventListener('click',function(){
+      aGap=A_GAP[b.dataset.speed]; $('asvg').style.setProperty('--flow-dur',A_FLOW[b.dataset.speed]);
+      document.querySelectorAll('#archSpeed button').forEach(function(x){ x.setAttribute('aria-pressed',String(x===b)); });
+      if(aTimer) aStart();
+    });
+  });
+  showStage(stage);
 
   /* power calculator */
   function power(){
