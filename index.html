@@ -600,9 +600,10 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:24px;font-
 
   <h3 class="sub">沒有多埠封包分析儀怎麼辦</h3>
   <div class="grid g2">
-    <div class="card"><h4>① 流量回環打流法</h4><p>伺服器配雙 10G 網卡（Linux + TRex 或 pktgen）發出 10G 線速進入 SFP+ 1。交換器內 8 個 RJ45 以 VLAN 分組、跳線兩兩串接成菊花鏈，封包在 8 埠循環跑滿 1G 線速後，由 SFP+ 2 返回伺服器監測。</p><div class="formula-line" style="margin-top:12px">Server → SFP+1 → P1⇄P2 → P3⇄P4 → P5⇄P6 → P7⇄P8 → SFP+2 → Server</div></div>
-    <div class="card"><h4>② PoE 實體抽載</h4><p>使用 8 個 PoE+ 假負載治具／負載板（PoE Splitter + 大功率電阻或電子負載），手動設定各埠汲取功率。</p><div class="big accent" style="margin-top:12px">30W × 8 = 240W</div></div>
+    <div class="card"><h4>① 流量回環打流法</h4><p>伺服器（Linux + TRex）配雙埠 1G 與雙埠 10G 網卡，兩路同時打流：A 路從 1G 網卡進 P1，經 3 條跳線串成菊花鏈，從 P8 回到伺服器；B 路從 10G 網卡進 SFP+1，路由轉發到 SFP+2 再回到伺服器。</p><div class="formula-line" style="margin-top:12px">A：1G-a → P1 → P2–P3 → P4–P5 → P6–P7 → P8 → 1G-b</div><div class="formula-line" style="margin-top:6px">B：10G-1 → SFP+1 → SFP+2 → 10G-2</div><p class="note" style="margin-top:8px">菊花鏈中間都是 1G，不能從 SFP+ 送 10G 進去：超過 1G 會掉包，10G 埠也測不到線速。</p></div>
+    <div class="card"><h4>② PoE 實體抽載</h4><p>每埠接一組 PoE Splitter，再把電阻或電子負載接在 Splitter 的 DC 輸出端，8 組同時抽電。單接電阻無法通過 PoE 偵測，交換器不會送電。</p><div class="big accent" style="margin-top:12px">30W × 8 = 240W</div></div>
   </div>
+  <p style="margin-top:16px"><a class="btn primary" href="alt.html" style="text-decoration:none;display:inline-block">查看接線圖與動畫 →</a></p>
 
   <h3 class="sub">RFC 2544 / 2889 重點</h3>
   <div class="grid g2">
@@ -618,7 +619,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:24px;font-
     <details><summary>為什麼 44V 比 54V 嚴苛？</summary><div class="body"><p>功率 P = V × I。輸入功率相同時，電壓越低電流越大，內部 DC-DC 轉換與導線的發熱（I²R）也越高。上方的功耗計算器可以直接看到差異。</p></div></details>
     <details><summary>每埠 30W 和 25.5W 差在哪？</summary><div class="body"><p>30W 是交換器（PSE）每埠的輸出上限，25.5W 是受電設備（PD）端保證收到的功率，差額是 100m 網路線的損耗上限。測試時要確認負載儀的設定是哪一端。</p></div></details>
     <details><summary>72 小時是怎麼決定的？</summary><div class="body"><p>來自本測試規劃的 Burn-in 要求，用來觀察長時間運轉下的熱平衡、記憶體洩漏與偶發錯誤。實際時數可依產品驗證規範或客戶要求調整。</p></div></details>
-    <details><summary>沒有 Spirent / IXIA 能做嗎？</summary><div class="body"><p>可以先用附錄的替代方案：TRex 或 pktgen 搭配菊花鏈回環打流，PoE 用假負載治具。但量測精度與 RFC 報告的完整度會受限，正式驗證仍建議使用專用儀器。</p></div></details>
+    <details><summary>沒有 Spirent / IXIA 能做嗎？</summary><div class="body"><p>可以先用附錄的替代方案：TRex 搭配 A＋B 兩路回環打流，PoE 用 Splitter 加負載（<a href="alt.html">接線圖與動畫</a>）。但量測精度與 RFC 報告的完整度會受限，正式驗證仍建議使用專用儀器。</p></div></details>
   </div>
 
   <h3 class="sub">名詞表</h3>

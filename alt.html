@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>替代方案接線圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: same instrument-panel system as the main guide — wiring diagrams sit on a dark bench panel, explanations on light paper */
+:root{
+  --bg:#F3F4F2; --surface:#FFFFFF; --sunken:#EBEDEA; --panel:#2B3339; --panel-2:#3A464E;
+  --fg:#1E262B; --muted:#5A666D; --line:#D6DAD7;
+  --accent:#E8A300; --accent-ink:#8A5D00; --on-panel:#EEF1EF; --on-panel-muted:#AAB5BB;
+  --pathA:#F2B21B; --pathB:#5FB3F0; --metal:#56636B; --port:#1A2024;
+  --ok:#23794B; --warn:#B4362A;
+  --f-display:"Barlow Condensed","Noto Sans TC",system-ui,sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161B1E; --surface:#1F262A; --sunken:#192024; --panel:#0E1315; --panel-2:#26313A;
+  --fg:#E7EBE8; --muted:#9BA7AD; --line:#323C42;
+  --accent:#F2B21B; --accent-ink:#F2B21B; --on-panel:#EEF1EF; --on-panel-muted:#95A2A8;
+  --metal:#3E4A52; --port:#0A0E10; --ok:#4CC38A; --warn:#FF7A6B; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#161B1E; --surface:#1F262A; --sunken:#192024; --panel:#0E1315; --panel-2:#26313A;
+  --fg:#E7EBE8; --muted:#9BA7AD; --line:#323C42;
+  --accent:#F2B21B; --accent-ink:#F2B21B; --on-panel:#EEF1EF; --on-panel-muted:#95A2A8;
+  --metal:#3E4A52; --port:#0A0E10; --ok:#4CC38A; --warn:#FF7A6B; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.75;margin:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px}
+main.wrap{padding-block:0 80px}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.3;margin:0}
+p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink)}
+.lead{color:var(--muted);max-width:68ch;margin-top:10px}
+a{color:var(--accent-ink)}
+
+.hero{background:var(--panel);color:var(--on-panel);padding-block:28px 32px}
+.hero a{color:var(--on-panel-muted);font-size:14px;text-decoration:none}
+.hero a:hover{color:var(--on-panel)}
+.hero .eyebrow{color:var(--accent);margin-top:18px}
+.hero h1{font-size:clamp(28px,4.4vw,42px);font-weight:900;margin-top:8px}
+.hero p{color:var(--on-panel-muted);max-width:64ch;margin-top:10px}
+.hero .jump{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.hero .jump a{font-size:14px;color:var(--on-panel);border:1px solid var(--panel-2);border-radius:999px;padding:4px 14px}
+.hero .jump a:hover{border-color:var(--accent);color:var(--accent)}
+
+section{padding-top:56px}
+section > h2{font-size:clamp(24px,3.4vw,32px);font-weight:900;margin-top:6px}
+h3.sub{font-size:20px;font-weight:700;margin-top:36px}
+
+/* bench: diagram panel */
+.bench{margin-top:24px;background:var(--panel);border-radius:8px;overflow:hidden}
+.bench-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--panel-2)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--on-panel-muted)}
+.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:3px}
+.ctrls{display:flex;flex-wrap:wrap;gap:6px}
+.ctrls button{appearance:none;font:600 13px var(--f-body);padding:6px 12px;border-radius:5px;border:1px solid var(--panel-2);background:transparent;color:var(--on-panel);cursor:pointer}
+.ctrls button:hover{border-color:var(--on-panel-muted)}
+.ctrls button.primary{background:var(--accent);border-color:var(--accent);color:#1A1A1A}
+.ctrls button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.diagram{overflow-x:auto;padding:8px 10px 0}
+.diagram svg{display:block;width:100%;min-width:680px;height:auto}
+.caption{display:flex;gap:12px;align-items:flex-start;padding:14px 18px 18px;border-top:1px solid var(--panel-2);color:var(--on-panel);min-height:76px}
+.caption .stepno{flex:none;font:700 13px var(--f-mono);padding:2px 8px;border-radius:4px;background:var(--panel-2);color:var(--on-panel-muted)}
+.caption .stepno.a{background:var(--pathA);color:#1A1A1A}
+.caption .stepno.b{background:var(--pathB);color:#0B1A26}
+.caption p{font-size:15px}
+.caption p + p{color:var(--on-panel-muted);font-size:13.5px;margin-top:2px}
+
+/* svg styles */
+svg text{font-family:var(--f-mono)}
+.sv-box{fill:var(--panel-2);stroke:var(--metal);stroke-width:1.5}
+.sv-panel{fill:var(--metal);stroke:var(--on-panel-muted);stroke-opacity:.35;stroke-width:1.5}
+.sv-port{fill:var(--port);stroke:var(--on-panel-muted);stroke-opacity:.5;stroke-width:1}
+.sv-label{fill:var(--on-panel-muted);font-size:11px}
+.sv-port-label{fill:#C9D2D7;font-size:12px;font-weight:600;pointer-events:none}
+.sv-port-label.sfp{font-size:9.5px}
+.sv-title{fill:var(--on-panel);font-size:13px;font-weight:600;font-family:var(--f-body)}
+.sv-nic{fill:var(--port);stroke:var(--on-panel-muted);stroke-opacity:.6}
+.seg{fill:none;stroke-width:3;stroke-linecap:round;opacity:.35;transition:opacity .2s,stroke-width .2s}
+.seg.a{stroke:var(--pathA)}
+.seg.b{stroke:var(--pathB)}
+.seg.internal{stroke-dasharray:5 5}
+.seg.on{opacity:1;stroke-width:4.5}
+.vtag{font-size:10.5px;font-weight:600}
+.vtag.a{fill:var(--pathA)}
+.vtag.b{fill:var(--pathB)}
+.dot{transition:none}
+.dot.a{fill:var(--pathA)}
+.dot.b{fill:var(--pathB)}
+
+/* tables */
+.grid{display:grid;gap:16px;margin-top:20px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table.data{border-collapse:collapse;width:100%;font-size:14.5px}
+table.data caption{text-align:left;font-weight:700;padding:12px 14px 4px;font-size:15px}
+table.data th,table.data td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+table.data th{background:var(--sunken);font-weight:700;font-size:13px;color:var(--muted)}
+table.data tr:last-child td{border-bottom:0}
+table.data td.m{font-family:var(--f-mono);white-space:nowrap}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+.callout{margin-top:16px;border:1px solid var(--accent);background:var(--sunken);border-radius:8px;padding:14px 18px;font-size:15px}
+.callout b{color:var(--accent-ink)}
+.callout + .callout{margin-top:12px}
+/* poe diagram */
+.flow{fill:none;stroke:var(--metal);stroke-width:5;stroke-linecap:round}
+.flow.on{stroke:var(--pathA);stroke-dasharray:12 8;animation:flow .8s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-20}}
+.hs{fill:none;stroke:var(--pathB);stroke-width:2.5;opacity:0;transition:opacity .2s}
+.hs.on{opacity:1}
+.hs-label{fill:var(--pathB);font-size:11.5px;font-weight:600}
+.lit{stroke:var(--pathA)!important;stroke-width:2.5!important;stroke-opacity:1!important}
+
+/* calculator */
+.tool{margin-top:20px;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}
+.tool-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)}
+.tool-head h4{font-size:18px;font-family:var(--f-mono)}
+.tool-head .eyebrow{color:var(--muted)}
+.tool-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.controls{padding:20px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.field label,.flabel{font-size:14px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+.field output{font-family:var(--f-mono);color:var(--fg);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{appearance:none;font:600 14px var(--f-mono);padding:6px 12px;border-radius:4px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.presets button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#1A1A1A}
+.note{font-size:13px;color:var(--muted);margin-top:4px}
+.screen{background:var(--panel);color:var(--on-panel);padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px dashed var(--panel-2);padding-bottom:9px}
+.row span{font-size:14px;color:var(--on-panel-muted)}
+.row b{font-family:var(--f-mono);font-size:17px;font-variant-numeric:tabular-nums}
+.row b.hot{color:var(--accent)}
+.total span{display:block;font-size:13px;color:var(--on-panel-muted)}
+.total b{font-family:var(--f-display);font-size:40px;color:var(--accent);line-height:1.05;font-variant-numeric:tabular-nums}
+.verdict{font-size:14px;color:var(--on-panel-muted)}
+.verdict strong{color:var(--accent)}
+@media (max-width:820px){ .tool-body{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion:reduce){ .flow.on{animation:none} }
+
+@media (max-width:820px){ .g2{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a href="index.html#appx">← 回到測試指南</a>
+    <div class="eyebrow">附錄 · 替代方案</div>
+    <h1>沒有多埠封包分析儀時的接線圖</h1>
+    <p>用一台伺服器加上跳線打流量，用 PoE Splitter 加負載抽電，在專用儀器到位前先做功耗與散熱摸底。</p>
+    <p class="jump"><a href="#loop">① 流量回環打流法</a><a href="#poe">② PoE 實體抽載</a></p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="loop">
+  <div class="eyebrow">① 流量回環打流法</div>
+  <h2>A＋B 兩路同時打流</h2>
+  <p class="lead">8 個 1G 埠串成一條菊花鏈（A 路），2 個 10G 埠另走直通（B 路），兩路同時跑，全機 10 埠才會都滿載。按「播放」看封包怎麼走，或按「下一步」逐段看。</p>
+
+  <div class="bench">
+    <div class="bench-head">
+      <div class="legend"><span><i style="background:var(--pathA)"></i>A 路 · 1G 菊花鏈</span><span><i style="background:var(--pathB)"></i>B 路 · 10G 直通</span><span><i style="background:repeating-linear-gradient(90deg,var(--on-panel-muted) 0 4px,transparent 4px 7px)"></i>交換器內部轉發</span></div>
+      <div class="ctrls" role="group" aria-label="動畫控制">
+        <button data-mode="A" aria-pressed="false">只看 A</button>
+        <button data-mode="B" aria-pressed="false">只看 B</button>
+        <button data-mode="AB" aria-pressed="true">A＋B</button>
+        <button id="prev">上一步</button>
+        <button id="next">下一步</button>
+        <button id="play" class="primary">▶ 播放</button>
+      </div>
+    </div>
+    <div class="diagram">
+      <svg id="svg" viewBox="0 0 940 370" role="img" aria-labelledby="svgTitle">
+        <title id="svgTitle">測試伺服器以 4 條線連到交換器：1G 網卡兩埠接 P1 與 P8，10G 網卡兩埠接 SFP+1 與 SFP+2；P2–P3、P4–P5、P6–P7 以 3 條跳線串接。</title>
+        <!-- server -->
+        <rect class="sv-box" x="150" y="18" width="660" height="78" rx="8"/>
+        <text class="sv-title" x="170" y="44">測試伺服器 · Linux + TRex</text>
+        <text class="sv-label" x="170" y="64">雙埠 1G 網卡 ＋ 雙埠 10G 網卡</text>
+        <rect class="sv-nic" x="172" y="76" width="36" height="20" rx="3"/><text class="sv-label" x="197" y="116">1G-a</text>
+        <rect class="sv-nic" x="606" y="76" width="36" height="20" rx="3"/><text class="sv-label" x="631" y="116">1G-b</text>
+        <rect class="sv-nic" x="682" y="76" width="36" height="20" rx="3"/><text class="sv-label" x="707" y="116">10G-1</text>
+        <rect class="sv-nic" x="742" y="76" width="36" height="20" rx="3"/><text class="sv-label" x="767" y="116">10G-2</text>
+        <!-- switch panel -->
+        <rect class="sv-panel" x="140" y="200" width="680" height="96" rx="8"/>
+        <text class="sv-title" x="40" y="246">L3 PoE+</text>
+        <text class="sv-title" x="40" y="264">Switch Hub</text>
+        <g id="ports"></g>
+        <!-- segments drawn by script -->
+        <g id="segs"></g>
+        <g id="tags"></g>
+        <circle id="dotA" class="dot a" r="7" cx="-20" cy="-20"/>
+        <circle id="dotB" class="dot b" r="7" cx="-20" cy="-20"/>
+      </svg>
+    </div>
+    <div class="caption" aria-live="polite"><span class="stepno" id="stepNo">—</span><div><p id="capMain">按「播放」或「下一步」開始。</p><p id="capSub">A 路與 B 路會同時進行，這正是最大功耗測試需要的狀態。</p></div></div>
+  </div>
+
+  <div class="grid g2">
+    <div class="table-wrap">
+      <table class="data">
+        <caption>接線表</caption>
+        <thead><tr><th>線</th><th>從</th><th>到</th><th>類型</th></tr></thead>
+        <tbody>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>A-in</td><td class="m">伺服器 1G-a</td><td class="m">P1</td><td>Cat6 網路線</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>跳線 1</td><td class="m">P2</td><td class="m">P3</td><td>Cat6 網路線</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>跳線 2</td><td class="m">P4</td><td class="m">P5</td><td>Cat6 網路線</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>跳線 3</td><td class="m">P6</td><td class="m">P7</td><td>Cat6 網路線</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>A-out</td><td class="m">P8</td><td class="m">伺服器 1G-b</td><td>Cat6 網路線</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathB)"></span>B-in</td><td class="m">伺服器 10G-1</td><td class="m">SFP+1</td><td>DAC 或光纖＋SFP+ 模組</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathB)"></span>B-out</td><td class="m">SFP+2</td><td class="m">伺服器 10G-2</td><td>DAC 或光纖＋SFP+ 模組</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <caption>交換器內部分組</caption>
+        <thead><tr><th>分組</th><th>成員埠</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>VLAN 11</td><td class="m">P1 + P2</td><td>P1 收到的封包轉給 P2</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>VLAN 12</td><td class="m">P3 + P4</td><td>P3 → P4</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>VLAN 13</td><td class="m">P5 + P6</td><td>P5 → P6</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathA)"></span>VLAN 14</td><td class="m">P7 + P8</td><td>P7 → P8</td></tr>
+          <tr><td class="m"><span class="sw" style="background:var(--pathB)"></span>子網 X / Y</td><td class="m">SFP+1 / SFP+2</td><td>兩埠在不同子網，靠靜態路由互轉（L3）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout"><b>為什麼要分兩路：</b>菊花鏈是串聯，速度由最慢的一段決定。如果像原本那樣從 SFP+ 送 10G 進入 1G 菊花鏈，整條鏈最多只有 1G，超過的會在 P1 掉包，10G 埠也只跑到 10%。</div>
+  <div class="callout"><b>A 路測到的是 L2：</b>VLAN 串接是二層交換，不會經過路由查表。要讓 A 路也走 L3，每個分組要改成不同子網並設定靜態路由。B 路本身就是 L3 路由轉發。</div>
+  <div class="callout"><b>流量產生工具：</b>10G 跑 64B 線速時，每個方向 14.88 Mpps，建議用 TRex（DPDK 架構）。Linux 內建的 pktgen 在小封包時通常追不上。這個方法適合前期摸底；正式 RFC 2544 報告仍建議用專用封包分析儀。</div>
+</section>
+
+<section id="poe">
+  <div class="eyebrow">② PoE 實體抽載</div>
+  <h2>交換器埠 → PoE Splitter → 負載</h2>
+  <p class="lead">沒有 PoE 負載模擬器時，每個埠接一組「PoE Splitter＋電阻或電子負載」，8 組同時抽電。按「下一步」看交換器送電前的握手流程，就知道為什麼不能直接接電阻。</p>
+
+  <div class="bench">
+    <div class="bench-head">
+      <div class="legend"><span><i style="background:var(--pathB)"></i>握手訊號</span><span><i style="background:var(--pathA)"></i>功率流向</span></div>
+      <div class="ctrls" role="group" aria-label="握手流程控制">
+        <button id="pPrev">上一步</button>
+        <button id="pNext">下一步</button>
+        <button id="pPlay" class="primary">▶ 播放</button>
+      </div>
+    </div>
+    <div class="diagram">
+      <svg id="psvg" viewBox="0 0 940 250" role="img" aria-labelledby="psvgTitle">
+        <title id="psvgTitle">交換器 PoE 埠經網路線接到 PoE Splitter，Splitter 的 DC 輸出接到電阻或電子負載，共 8 組。</title>
+        <defs>
+          <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--pathB)"/></marker>
+        </defs>
+        <!-- blocks -->
+        <rect class="sv-box" x="30" y="70" width="170" height="110" rx="8" id="bPse"/>
+        <text class="sv-title" x="115" y="112" text-anchor="middle">交換器 PoE 埠</text>
+        <text class="sv-label" x="115" y="132" text-anchor="middle">PSE · 802.3at</text>
+        <text class="sv-label" x="115" y="150" text-anchor="middle">Port 1~8</text>
+
+        <rect class="sv-box" x="330" y="70" width="210" height="110" rx="8" id="bSpl"/>
+        <text class="sv-title" x="435" y="104" text-anchor="middle">PoE Splitter</text>
+        <rect x="360" y="116" width="150" height="44" rx="5" fill="var(--port)" stroke="var(--pathB)" stroke-opacity=".7" id="bPd"/>
+        <text class="sv-label" x="435" y="135" text-anchor="middle">PD 控制器</text>
+        <text class="sv-label" x="435" y="151" text-anchor="middle">25 kΩ · Class 4</text>
+
+        <rect class="sv-box" x="680" y="70" width="190" height="110" rx="8" id="bLoad"/>
+        <text class="sv-title" x="775" y="112" text-anchor="middle">電阻 / 電子負載</text>
+        <text class="sv-label" x="775" y="134" text-anchor="middle" id="tLoadR">R ≈ 5.3 Ω</text>
+        <text class="sv-label" x="775" y="152" text-anchor="middle" id="tLoadW">27.0 W 變成熱</text>
+        <rect x="838" y="40" width="44" height="24" rx="12" fill="var(--accent)"/><text x="860" y="57" text-anchor="middle" style="font-size:12px;font-weight:700;fill:#1A1A1A">× 8</text>
+
+        <!-- cable + dc out -->
+        <path id="lCable" class="flow" d="M200 125 L330 125"/>
+        <path id="lDc" class="flow" d="M540 125 L680 125"/>
+        <text class="sv-label" x="265" y="114" text-anchor="middle">網路線</text>
+        <text class="vtag a" x="265" y="150" text-anchor="middle" id="tPse">30.0 W</text>
+        <text class="sv-label" x="610" y="114" text-anchor="middle" id="tDcV">DC 12 V</text>
+        <text class="vtag a" x="610" y="150" text-anchor="middle" id="tDcW">27.0 W</text>
+        <text class="sv-label" x="435" y="200" text-anchor="middle" id="tLoss">Splitter 損耗 3.0 W（η 90%）</text>
+
+        <!-- handshake arrows -->
+        <path id="hDet" class="hs" d="M200 92 L330 92" marker-end="url(#arrB)"/>
+        <path id="hCls" class="hs" d="M330 100 L200 100" marker-end="url(#arrB)"/>
+        <text class="hs-label" x="265" y="82" text-anchor="middle" id="hText"></text>
+      </svg>
+    </div>
+    <div class="caption" aria-live="polite"><span class="stepno" id="pStepNo">—</span><div><p id="pCap">按「下一步」看交換器送電前的握手流程。</p><p id="pSub">PSE 確認接上的是合格受電設備後才會送電，這是 PoE 的保護機制。</p></div></div>
+  </div>
+
+  <div class="callout"><b>為什麼不能直接接電阻：</b>交換器送電前會先量 25 kΩ 的特徵電阻（偵測），再確認功率等級（分級）。直接接一顆幾歐姆的負載電阻，偵測會失敗，交換器根本不會送電。所以一定要經過 PoE Splitter，由它內部的 PD 控制器完成握手，負載接在 Splitter 的 DC 輸出端。</div>
+
+  <h3 class="sub">負載電阻計算器</h3>
+  <div class="tool">
+    <div class="tool-head"><h4>R = V² ÷ P</h4><span class="eyebrow">每埠一組 · 共 8 組</span></div>
+    <div class="tool-body">
+      <div class="controls">
+        <div class="field">
+          <label for="cPse">目標 PSE 端功率（W／埠）<output id="cPseOut">30.0</output></label>
+          <input type="range" id="cPse" min="5" max="30" step="0.5" value="30">
+        </div>
+        <div class="field">
+          <span class="flabel">Splitter DC 輸出電壓</span>
+          <div class="presets" role="group" aria-label="Splitter 輸出電壓" id="cVPre">
+            <button data-v="12" aria-pressed="true">12 V</button><button data-v="24" aria-pressed="false">24 V</button><button data-v="48" aria-pressed="false">48 V</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cEff">Splitter 效率 η（%）<output id="cEffOut">90</output></label>
+          <input type="range" id="cEff" min="70" max="98" step="1" value="90">
+          <p class="note">90% 為示意值，請以 Splitter 規格書或實測為準。</p>
+        </div>
+      </div>
+      <div class="screen" aria-live="polite">
+        <div class="total"><span>負載電阻值（每埠）</span><b id="cR">5.33 Ω</b></div>
+        <div class="row"><span>負載端功率</span><b id="cPl">27.0 W</b></div>
+        <div class="row"><span>負載電流</span><b id="cI">2.25 A</b></div>
+        <div class="row"><span>電阻建議額定（2 倍餘裕）</span><b id="cRate" class="hot">≥ 54 W</b></div>
+        <div class="row"><span>8 組負載合計發熱</span><b id="cHeat">216 W</b></div>
+        <div class="verdict" id="cVerdict"></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout"><b>選 Splitter 要注意額定功率：</b>802.3at 規定受電設備端最多 25.5 W。用短線接 Splitter 時，PSE 端 30 W 幾乎全部送到 Splitter，所以 Splitter 和它的 PD 控制器要能承受約 30 W 輸入，選型時要確認規格。</div>
+  <div class="callout"><b>負載會很燙：</b>8 組負載合計會產生 200 W 以上的熱。電阻要裝散熱片或用電子負載，並和待測物、熱電偶隔開，避免干擾溫度量測。</div>
+</section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var NS='http://www.w3.org/2000/svg';
+  var svg=document.getElementById('svg');
+  var Y_TOP=230, Y_BOT=264, SRV=96;               // port top / bottom edge, server NIC bottom
+  var RJ=[190,252,314,376,438,500,562,624], SFP=[700,760];
+  function el(tag,attrs,parent){ var e=document.createElementNS(NS,tag); for(var k in attrs) e.setAttribute(k,attrs[k]); (parent||svg).appendChild(e); return e; }
+
+  /* ports */
+  var ports=document.getElementById('ports');
+  var LBL=(Y_TOP+Y_BOT)/2+4;
+  RJ.forEach(function(x,i){ el('rect',{class:'sv-port',x:x-17,y:Y_TOP,width:34,height:Y_BOT-Y_TOP,rx:3},ports); el('text',{class:'sv-port-label',x:x,y:LBL,'text-anchor':'middle'},ports).textContent='P'+(i+1); });
+  SFP.forEach(function(x,i){ el('rect',{class:'sv-port',x:x-21,y:Y_TOP+2,width:42,height:Y_BOT-Y_TOP-4,rx:2},ports); el('text',{class:'sv-port-label sfp',x:x,y:LBL,'text-anchor':'middle'},ports).textContent='SFP+'+(i+1); });
+
+  /* segments: [path d, path(A/B), internal?, caption, sub] */
+  function down(x){ return 'M'+x+' '+SRV+' L'+x+' '+Y_TOP; }
+  function up(x){ return 'M'+x+' '+Y_TOP+' L'+x+' '+SRV; }
+  function inner(x1,x2,h){ var m=(x1+x2)/2; return 'M'+x1+' '+Y_TOP+' Q'+m+' '+(Y_TOP-(h||34))+' '+x2+' '+Y_TOP; }
+  function jump(x1,x2){ return 'M'+x1+' '+Y_BOT+' C'+x1+' '+(Y_BOT+78)+' '+x2+' '+(Y_BOT+78)+' '+x2+' '+Y_BOT; }
+  var A=[
+    [down(RJ[0]),true,false,'伺服器 1G 網卡 a 送出封包，進入 P1','A-in：1G 線速，雙向同時打'],
+    [inner(RJ[0],RJ[1]),true,true,'交換器內 VLAN 11 把封包從 P1 轉到 P2','P1 收、P2 送'],
+    [jump(RJ[1],RJ[2]),true,false,'跳線 1：P2 → P3','封包離開交換器，再從 P3 進來'],
+    [inner(RJ[2],RJ[3]),true,true,'VLAN 12：P3 → P4',''],
+    [jump(RJ[3],RJ[4]),true,false,'跳線 2：P4 → P5',''],
+    [inner(RJ[4],RJ[5]),true,true,'VLAN 13：P5 → P6',''],
+    [jump(RJ[5],RJ[6]),true,false,'跳線 3：P6 → P7',''],
+    [inner(RJ[6],RJ[7]),true,true,'VLAN 14：P7 → P8',''],
+    [up(RJ[7]),true,false,'P8 送回伺服器 1G 網卡 b','比對收發封包數，算出掉包。8 個 1G 埠的收與送都跑滿 1G']
+  ];
+  var B=[
+    [down(SFP[0]),false,false,'伺服器 10G 網卡埠 1 送出封包，進入 SFP+1','B-in：10G 線速，64B 時每方向 14.88 Mpps'],
+    [inner(SFP[0],SFP[1],40),false,true,'交換器路由轉發：子網 X → 子網 Y','B 路走 L3，經過路由查表'],
+    [up(SFP[1]),false,false,'SFP+2 送回伺服器 10G 網卡埠 2','2 個 10G 埠的收與送都跑滿 10G']
+  ];
+  var segG=document.getElementById('segs');
+  function build(list,cls){ return list.map(function(s){ var p=el('path',{d:s[0],class:'seg '+cls+(s[2]?' internal':'')},segG); return {p:p,len:p.getTotalLength(),cap:s[3],sub:s[4]}; }); }
+  var segA=build(A,'a'), segB=build(B,'b');
+
+  /* tags */
+  var tags=document.getElementById('tags');
+  [[0,1,'V11'],[2,3,'V12'],[4,5,'V13'],[6,7,'V14']].forEach(function(t){ el('text',{class:'vtag a',x:(RJ[t[0]]+RJ[t[1]])/2,y:208,'text-anchor':'middle'},tags).textContent=t[2]; });
+  el('text',{class:'vtag b',x:(SFP[0]+SFP[1])/2,y:186,'text-anchor':'middle'},tags).textContent='路由';
+  [[1,2,'跳線1'],[3,4,'跳線2'],[5,6,'跳線3']].forEach(function(t){ el('text',{class:'sv-label',x:(RJ[t[0]]+RJ[t[1]])/2,y:Y_BOT+76,'text-anchor':'middle'},tags).textContent=t[2]; });
+
+  /* state */
+  var mode='AB', step=-1, playing=false, raf=0;
+  var dotA=document.getElementById('dotA'), dotB=document.getElementById('dotB');
+  var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function lists(){ return mode==='A'?[segA]:mode==='B'?[segB]:[segA,segB]; }
+  function maxSteps(){ return mode==='B'?segB.length:segA.length; }
+  function clear(){ segA.concat(segB).forEach(function(s){ s.p.classList.remove('on'); }); }
+  function place(dot,seg,t){ var pt=seg.p.getPointAtLength(seg.len*t); dot.setAttribute('cx',pt.x); dot.setAttribute('cy',pt.y); }
+  function hide(dot){ dot.setAttribute('cx',-20); dot.setAttribute('cy',-20); }
+  function bStep(i){ return Math.min(segB.length-1, Math.floor(i*segB.length/segA.length)); }
+  function caption(i){
+    var no=document.getElementById('stepNo'), m=document.getElementById('capMain'), s=document.getElementById('capSub');
+    if(i<0){ no.className='stepno'; no.textContent='—'; m.textContent='按「播放」或「下一步」開始。'; s.textContent= mode==='AB'?'A 路與 B 路會同時進行，這正是最大功耗測試需要的狀態。':''; return; }
+    if(mode==='B'){ no.className='stepno b'; no.textContent='B '+(i+1)+'/'+segB.length; m.textContent=segB[i].cap; s.textContent=segB[i].sub; return; }
+    no.className='stepno a'; no.textContent='A '+(i+1)+'/'+segA.length; m.textContent=segA[i].cap;
+    s.textContent= mode==='AB' ? (segA[i].sub ? segA[i].sub+'　｜　' : '')+'B 路同時：'+segB[bStep(i)].cap : segA[i].sub;
+  }
+  function show(i){
+    clear(); hide(dotA); hide(dotB);
+    if(i>=0){
+      if(mode!=='B'){ for(var k=0;k<=i;k++) segA[k].p.classList.add('on'); place(dotA,segA[i],1); }
+      if(mode==='B'){ for(var j=0;j<=i;j++) segB[j].p.classList.add('on'); place(dotB,segB[i],1); }
+      if(mode==='AB'){ var b=bStep(i); for(var q=0;q<=b;q++) segB[q].p.classList.add('on'); place(dotB,segB[b],1); }
+    }
+    caption(i);
+  }
+  function stop(){ playing=false; cancelAnimationFrame(raf); document.getElementById('play').textContent='▶ 播放'; }
+  function play(){
+    if(reduce){ step=(step+1)%maxSteps(); show(step); return; }
+    playing=true; document.getElementById('play').textContent='❚❚ 暫停';
+    var durA=7000, totA=segA.reduce(function(a,s){return a+s.len;},0), totB=segB.reduce(function(a,s){return a+s.len;},0), t0=null;
+    function at(list,tot,frac,dot){
+      var d=frac*tot, acc=0;
+      for(var i=0;i<list.length;i++){ if(d<=acc+list[i].len || i===list.length-1){ for(var k=0;k<=i;k++) list[k].p.classList.add('on'); place(dot,list[i],Math.min(1,(d-acc)/list[i].len)); return i; } acc+=list[i].len; }
+    }
+    function frame(ts){
+      if(!playing) return;
+      if(t0===null) t0=ts;
+      var frac=((ts-t0)%durA)/durA;
+      clear(); hide(dotA); hide(dotB);
+      var ia=-1, ib=-1;
+      if(mode!=='B') ia=at(segA,totA,frac,dotA);
+      if(mode!=='A') ib=at(segB,totB,frac,dotB);
+      step = mode==='B'?ib:ia; caption(step);
+      raf=requestAnimationFrame(frame);
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  document.getElementById('play').addEventListener('click',function(){ playing?stop():play(); });
+  document.getElementById('next').addEventListener('click',function(){ stop(); step=Math.min(maxSteps()-1,step+1); show(step); });
+  document.getElementById('prev').addEventListener('click',function(){ stop(); step=Math.max(-1,step-1); show(step); });
+  document.querySelectorAll('[data-mode]').forEach(function(b){
+    b.addEventListener('click',function(){
+      stop(); mode=b.dataset.mode; step=-1;
+      document.querySelectorAll('[data-mode]').forEach(function(x){ x.setAttribute('aria-pressed',String(x===b)); });
+      show(-1);
+    });
+  });
+  show(-1);
+})();
+
+(function(){
+  "use strict";
+  var $=function(id){ return document.getElementById(id); };
+  /* handshake steps */
+  var STEPS=[
+    {no:'① 偵測', tag:'① 偵測：量 25 kΩ', on:['hDet'], lit:['bPd'], flow:[],
+     cap:'PSE 先送出 2.7～10.1 V 的低電壓，量到 25 kΩ 特徵電阻，才確認接的是 PoE 受電設備。',
+     sub:'直接接幾歐姆的負載電阻，在這一步就會被判定為「不是 PD」，交換器不送電。'},
+    {no:'② 分級', tag:'② 分級：Class 4 → 30 W', on:['hCls'], lit:['bPd'], flow:[],
+     cap:'PSE 送出 15.5～20.5 V 的分級電壓，PD 控制器回應 Class 4，PSE 因此為這個埠分配 30 W。',
+     sub:'802.3at（Type 2）用兩次分級確認，Splitter 裡的 PD 控制器負責回應。'},
+    {no:'③ 供電', tag:'', on:[], lit:['bPse'], flow:['lCable'],
+     cap:'握手完成，PSE 開始輸出 50～57 V 的工作電壓（802.3at Type 2）。',
+     sub:'此時功率從交換器流向 Splitter。'},
+    {no:'④ 抽載', tag:'', on:[], lit:['bLoad'], flow:['lCable','lDc'],
+     cap:'Splitter 把 PoE 電壓轉成 DC 輸出，電阻或電子負載把功率全部變成熱。',
+     sub:'8 組同時抽載，PSE 端合計 240 W。用下方計算器算電阻值與額定。'}
+  ];
+  var step=-1, timer=0;
+  function show(i){
+    ['hDet','hCls'].forEach(function(id){ $(id).classList.remove('on'); });
+    ['lCable','lDc'].forEach(function(id){ $(id).classList.remove('on'); });
+    ['bPse','bPd','bLoad'].forEach(function(id){ $(id).classList.remove('lit'); });
+    if(i<0){ $('pStepNo').className='stepno'; $('pStepNo').textContent='—'; $('hText').textContent='';
+      $('pCap').textContent='按「下一步」看交換器送電前的握手流程。'; $('pSub').textContent='PSE 確認接上的是合格受電設備後才會送電，這是 PoE 的保護機制。'; return; }
+    var s=STEPS[i];
+    s.on.forEach(function(id){ $(id).classList.add('on'); });
+    s.flow.forEach(function(id){ $(id).classList.add('on'); });
+    s.lit.forEach(function(id){ $(id).classList.add('lit'); });
+    $('hText').textContent=s.tag;
+    $('pStepNo').className='stepno '+(i<2?'b':'a'); $('pStepNo').textContent=s.no+'　'+(i+1)+'/'+STEPS.length;
+    $('pCap').textContent=s.cap; $('pSub').textContent=s.sub;
+  }
+  function stop(){ clearInterval(timer); timer=0; $('pPlay').textContent='▶ 播放'; }
+  $('pPlay').addEventListener('click',function(){
+    if(timer){ stop(); return; }
+    $('pPlay').textContent='❚❚ 暫停';
+    step=(step+1)%STEPS.length; show(step);
+    timer=setInterval(function(){ step=(step+1)%STEPS.length; show(step); },2800);
+  });
+  $('pNext').addEventListener('click',function(){ stop(); step=Math.min(STEPS.length-1,step+1); show(step); });
+  $('pPrev').addEventListener('click',function(){ stop(); step=Math.max(-1,step-1); show(step); });
+  show(-1);
+
+  /* resistor calculator */
+  var V=12;
+  function calc(){
+    var pse=+$('cPse').value, eff=+$('cEff').value/100;
+    var pl=pse*eff, r=V*V/pl, i=pl/V, rate=Math.ceil(pl*2), heat=pl*8;
+    $('cPseOut').textContent=pse.toFixed(1); $('cEffOut').textContent=Math.round(eff*100);
+    $('cR').textContent=(r<10?r.toFixed(2):r.toFixed(1))+' Ω';
+    $('cPl').textContent=pl.toFixed(1)+' W'; $('cI').textContent=i.toFixed(2)+' A';
+    $('cRate').textContent='≥ '+rate+' W'; $('cHeat').textContent=Math.round(heat)+' W';
+    $('cVerdict').innerHTML='Splitter 的 '+V+' V 輸出要能提供 <strong>'+i.toFixed(2)+' A</strong>；電阻選 <strong>'+(r<10?r.toFixed(2):r.toFixed(1))+' Ω、'+rate+' W 以上</strong>（或用電子負載設定定功率 '+pl.toFixed(1)+' W）。';
+    $('tPse').textContent=pse.toFixed(1)+' W'; $('tDcV').textContent='DC '+V+' V'; $('tDcW').textContent=pl.toFixed(1)+' W';
+    $('tLoss').textContent='Splitter 損耗 '+(pse-pl).toFixed(1)+' W（η '+Math.round(eff*100)+'%）';
+    $('tLoadR').textContent='R ≈ '+(r<10?r.toFixed(1):r.toFixed(0))+' Ω'; $('tLoadW').textContent=pl.toFixed(1)+' W 變成熱';
+  }
+  ['cPse','cEff'].forEach(function(id){ $(id).addEventListener('input',calc); });
+  document.querySelectorAll('#cVPre button').forEach(function(b){
+    b.addEventListener('click',function(){ V=+b.dataset.v; document.querySelectorAll('#cVPre button').forEach(function(x){ x.setAttribute('aria-pressed',String(x===b)); }); calc(); });
+  });
+  calc();
+})();
+</script>
+</body>
+</html>
